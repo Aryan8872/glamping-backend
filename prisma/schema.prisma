@@ -14,62 +14,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
-
-
-enum BlogStatus{
-    PUBLISHED
-    DRAFT
-    DELETED
+enum BlogStatus {
+  PUBLISHED
+  DRAFT
+  DELETED
 }
 
-enum GalleryStatus{
-    PUBLISHED
-    DRAFT
-    DELETED
+enum GalleryStatus {
+  PUBLISHED
+  DRAFT
+  DELETED
 }
 
 model Blog {
-    id Int @id @default(autoincrement())
-    title String
-    excerpt String
-    content String
-    author String
-    slug String @unique
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    deletedAt DateTime @default(now())
-    status BlogStatus @default(DRAFT)
-    metaTitle String
-    metaDescription String
-    metaKeywords String
-    indexable Boolean @default(true)
-    coverImage String
-    tags String[]
-    views Int @default(0)
+  id              Int        @id @default(autoincrement())
+  title           String
+  excerpt         String
+  content         String
+  author          String
+  slug            String     @unique
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime   @default(now())
+  status          BlogStatus @default(DRAFT)
+  metaTitle       String
+  metaDescription String
+  metaKeywords    String
+  indexable       Boolean    @default(true)
+  coverImage      String
+  tags            String[]
+  views           Int        @default(0)
 }
 
-model Gallery{
-  id Int @default(autoincrement())
-  title String
-  description String
-  excerpt String
-  images String[]
-  coverImage String
-  slug String @unique
-  metaTitle String?
+model Gallery {
+  id              Int           @default(autoincrement())
+  title           String
+  description     String
+  excerpt         String
+  images          String[]
+  coverImage      String
+  slug            String        @unique
+  metaTitle       String?
   metaDescription String?
-  metaKeywords String?
-  galleryStatus GalleryStatus @default(DRAFT)
-  imageAlt String?
+  metaKeywords    String?
+  galleryStatus   GalleryStatus @default(DRAFT)
+  imageAlt        String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
 }
 
-model Contact{
-  id Int @unique @default(autoincrement())
-  email String
-  phoneNumber String
-  address String
-  workingHours String
+
+
+model AboutUs {
+  id         Int      @id @default(1)
+  aboutUs    String
+  textbox_1  String
+  textbox_2  String
+  mission    String
+  vision     String
+  coreValues CoreValue[]
+  stats      Stat[]
+  updatedAt  DateTime @updatedAt
 }
 
+model Stat {
+  id        Int     @id @default(autoincrement())
+  value     String
+  icon      String
+  heading   String
+
+  aboutUsId Int
+  aboutUs   AboutUs @relation(fields: [aboutUsId], references: [id])
+}
+
+
+model CoreValue {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  icon        String
+
+  aboutUsId  Int
+  aboutUs   AboutUs @relation(fields: [aboutUsId], references: [id])
+}
+
+model Contact {
+  id           Int    @id @default(1)
+  email        String
+  phoneNumber  String
+  address      String
+}

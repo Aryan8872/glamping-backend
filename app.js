@@ -6,6 +6,7 @@ import blogRoute from "./routes/blogRoute.js"
 import { BlogStatus } from "./utils/types.js"
 import galleryRoute from "./routes/galleryRoute.js"
 import contactRoute from "./routes/contactRoute.js"
+import aboutUsRoute from "./routes/aboutUsRoute.js"
 dotenv.config()
 const app = express()
 const port = 8080
@@ -13,7 +14,7 @@ const port = 8080
 
 app.use(cors())
 app.use(express.json())
-app.use(userroute,blogRoute,galleryRoute,contactRoute)
+app.use(userroute,blogRoute,galleryRoute,contactRoute,aboutUsRoute)
 app.listen(port,()=>{
     console.log(`server running at ${port}`)
 })
