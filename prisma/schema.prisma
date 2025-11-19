@@ -20,10 +20,30 @@ enum BlogStatus {
   DELETED
 }
 
+
 enum GalleryStatus {
   PUBLISHED
   DRAFT
   DELETED
+}
+
+enum BookingStatus{
+  BOOKED
+  CANCELED
+
+}
+
+enum BookingPaymentStatus{
+  PENDING
+  CLEARED
+}
+
+model User{
+  id Int @id @default(autoincrement())
+  fullName String
+  phoneNumber String
+  email String @unique
+  campBookings CampBookings[]
 }
 
 model Blog {
@@ -46,6 +66,64 @@ model Blog {
   views           Int        @default(0)
 }
 
+
+model CampSite{
+  id Int @id @default(autoincrement()) 
+  name String
+  description String
+  slug String @unique
+  images String[]
+  pricePerNight Decimal @db.Decimal(10,2)
+  campSiteFacilities CampSiteFacility[]
+  campHost CampHost?
+  bookings CampBookings[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @updatedAt
+}
+model CampHost{
+  id Int @id @default(autoincrement())
+  fullName String
+  email String @unique
+  phoneNumber String
+  profilePicture String
+
+  campId Int @unique
+  campSite CampSite @relation(fields: [campId], references: [id])
+}
+model Facility {
+  id Int @id @default(autoincrement())
+  name String
+  icon String
+  slug String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campSites CampSiteFacility[]
+}
+
+model CampSiteFacility {
+  id Int @id @default(autoincrement())
+  
+  campId Int
+  facilityId Int
+
+  campSite CampSite @relation(fields: [campId], references: [id])
+  facility Facility @relation(fields: [facilityId], references: [id])
+}
+
+model CampBookings{
+  id Int @default(autoincrement()) @id
+  userId Int
+  userInfo User @relation(fields: [userId],references: [id])
+  checkInDate DateTime
+  checkOutDate DateTime
+  totalPrice Decimal @db.Decimal(10,2)
+  paymentStatus BookingPaymentStatus
+  campSiteId Int
+  bookingStatus BookingStatus @default(BOOKED)
+  campSite CampSite @relation(fields: [campSiteId], references: [id])
+}
 model Gallery {
   id              Int           @default(autoincrement())
   title           String
@@ -62,8 +140,6 @@ model Gallery {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @default(now())
 }
-
-
 
 model AboutUs {
   id         Int      @id @default(1)
