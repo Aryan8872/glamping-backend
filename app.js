@@ -1,20 +1,28 @@
-import express from "express"
-import userroute from "./routes/userRoute.js"
-import cors from "cors"
-import dotenv from "dotenv"
-import blogRoute from "./routes/blogRoute.js"
-import { BlogStatus } from "./utils/types.js"
-import galleryRoute from "./routes/galleryRoute.js"
-import contactRoute from "./routes/contactRoute.js"
-import aboutUsRoute from "./routes/aboutUsRoute.js"
-dotenv.config()
-const app = express()
-const port = 8080
+import express from "express";
+import userroute from "./routes/userRoute.js";
+import cors from "cors";
+import dotenv from "dotenv";
+import blogRoute from "./routes/blogRoute.js";
+import galleryRoute from "./routes/galleryRoute.js";
+import contactRoute from "./routes/contactRoute.js";
+import aboutUsRoute from "./routes/aboutUsRoute.js";
+import bookingRoute from "./routes/bookingRoute.js";
+import campRoute from "./routes/campRoute.js";
+dotenv.config();
+const app = express();
+const port = 8080;
 
-
-app.use(cors())
-app.use(express.json())
-app.use(userroute,blogRoute,galleryRoute,contactRoute,aboutUsRoute)
-app.listen(port,()=>{
-    console.log(`server running at ${port}`)
-})
+app.use(cors());
+app.use(express.json());
+app.use(
+  userroute,
+  blogRoute,
+  galleryRoute,
+  contactRoute,
+  aboutUsRoute,
+  bookingRoute,
+  campRoute
+);
+app.listen(port, () => {
+  console.log(`server running at ${port}`);
+});

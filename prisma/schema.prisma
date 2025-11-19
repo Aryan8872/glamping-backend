@@ -33,6 +33,17 @@ enum BookingStatus{
 
 }
 
+enum UserType{
+  ADMIN
+  USER
+  CAMPHOST
+  SUPERADMIN
+}
+enum UserStatus{
+  DISABLED
+  ENABLED
+}
+
 enum BookingPaymentStatus{
   PENDING
   CLEARED
@@ -43,6 +54,8 @@ model User{
   fullName String
   phoneNumber String
   email String @unique
+  userType UserType @default(USER)
+  userStatus UserStatus @default(ENABLED)
   campBookings CampBookings[]
 }
 
@@ -119,11 +132,12 @@ model CampBookings{
   checkInDate DateTime
   checkOutDate DateTime
   totalPrice Decimal @db.Decimal(10,2)
-  paymentStatus BookingPaymentStatus
+  paymentStatus BookingPaymentStatus @default(PENDING)
   campSiteId Int
   bookingStatus BookingStatus @default(BOOKED)
   campSite CampSite @relation(fields: [campSiteId], references: [id])
 }
+
 model Gallery {
   id              Int           @default(autoincrement())
   title           String
