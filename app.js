@@ -1,16 +1,23 @@
 import express from "express";
-import userroute from "./routes/userRoute.js";
 import cors from "cors";
 import dotenv from "dotenv";
-import blogRoute from "./routes/blogRoute.js";
-import galleryRoute from "./routes/galleryRoute.js";
-import contactRoute from "./routes/contactRoute.js";
-import aboutUsRoute from "./routes/aboutUsRoute.js";
-import bookingRoute from "./routes/bookingRoute.js";
-import campRoute from "./routes/campRoute.js";
+import userroute from "./modules/user/userRoute.js";
+import galleryRoute from "./modules/gallery/galleryRoute.js";
+import blogRoute from "./modules/blogs/blogRoute.js";
+import contactRoute from "./modules/contact/contactRoute.js"
+import aboutUsRoute from "./modules/aboutUs/aboutUsRoute.js";
+import bookingRoute from "./modules/bookings/bookingRoute.js"
+import campRoute from "./modules/camps/campRoute.js";
+import path from "path";
+
 dotenv.config();
 const app = express();
 const port = 8080;
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+app.use(express.json( ));
+app.use(express.urlencoded({ extended: true }));
 
 app.use(cors());
 app.use(express.json());
