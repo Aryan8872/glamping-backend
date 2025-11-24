@@ -68,3 +68,12 @@ export const toPublicPath = (absolutePath) => {
     ? absolutePath.slice(cwd.length).replace(/\\/g, "/")
     : absolutePath.replace(/\\/g, "/");
 };
+
+
+/**
+ * Helper to remove files from disk
+ */
+export const removeFile = (filePath) => {
+  const absolute = path.join(process.cwd(), filePath.replace(/^\//, ""));
+  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
+};

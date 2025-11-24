@@ -5,19 +5,15 @@ import {
   getGalleryService,
   getGalleryBySlugService,
   updateGalleryStatusService,
+  deleteGalleryService,
 } from "./gallery.service.js";
 import { toPublicPath } from "../../utils/uploads/storage.utils.js";
+import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 
 /**
  * Convert multer files to public paths
  */
-const mapFilesToPaths = (files) => {
-  if (!files || !Array.isArray(files)) return [];
-  return files.map((f) => {
-    const publicPath = toPublicPath(path.resolve(f.path));
-    return publicPath.startsWith("/") ? publicPath : `/${publicPath}`;
-  });
-};
+
 
 export const createGalleryController = async (req, res, next) => {
   try {
@@ -78,6 +74,15 @@ export const getGalleryController = async (req, res, next) => {
   try {
     const galleries = await getGalleryService();
     return res.status(200).json({ message: "Gallery data", data: galleries });
+  } catch (err) {
+    next(err);
+  }
+};
+export const delteGalleryController = async (req, res, next) => {
+  try {
+    const galleryId = parseInt(req.params.galleryId)
+     await deleteGalleryService(galleryId);
+    return res.status(200).json({ message: "deleted gallery successfully", data: [] });
   } catch (err) {
     next(err);
   }

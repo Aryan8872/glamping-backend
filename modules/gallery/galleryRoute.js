@@ -4,6 +4,7 @@ import {
   getGalleryBySlugController,
   getGalleryController,
   updateGalleryController,
+  delteGalleryController
 } from "./gallery.controller.js";
 import { galleryUploadMiddleware } from "../../utils/uploads/multer.gallery.js";
 import { multerErrorHandler } from "../../utils/uploads/multerErrors.js";
@@ -22,6 +23,7 @@ galleryRoute.put(
   multerErrorHandler,
   updateGalleryController
 );
+galleryRoute.put("/gallery/delete/:galleryId",delteGalleryController)
 galleryRoute.get("/gallery/all", getGalleryController);
 galleryRoute.get("/gallery/:slug", getGalleryBySlugController);
 

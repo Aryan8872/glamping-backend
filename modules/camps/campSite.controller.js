@@ -1,8 +1,18 @@
 import { campSiteService } from "./campSite.service.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 
 export const createCampSite = asyncHandler(async (req, res) => {
-  const newCamp = await campSiteService.createCampSite(req.body);
+  const body = req.body || {};
+  const campImages = req.files?.campImages
+    ? mapFilesToPaths(req.files?.campImages)
+    : [];
+
+  const payload = {
+    ...body,
+    images:campImages,
+  }
+  const newCamp = await campSiteService.createCampSite(payload);
   res.status(201).json({
     message: "CampSite created successfully",
     data: newCamp,

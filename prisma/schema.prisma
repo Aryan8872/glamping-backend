@@ -20,43 +20,44 @@ enum BlogStatus {
   DELETED
 }
 
-
 enum GalleryStatus {
   PUBLISHED
   DRAFT
   DELETED
 }
 
-enum BookingStatus{
+enum BookingStatus {
   BOOKED
   CANCELED
-
 }
 
-enum UserType{
+enum UserType {
   ADMIN
   USER
   CAMPHOST
   SUPERADMIN
 }
-enum UserStatus{
+
+enum UserStatus {
   DISABLED
   ENABLED
 }
 
-enum BookingPaymentStatus{
+enum BookingPaymentStatus {
   PENDING
   CLEARED
 }
 
-model User{
-  id Int @id @default(autoincrement())
-  fullName String
-  phoneNumber String
-  email String @unique
-  userType UserType @default(USER)
-  userStatus UserStatus @default(ENABLED)
+model User {
+  id           Int            @id @default(autoincrement())
+  fullName     String
+  phoneNumber  String
+  email        String         @unique
+  userType     UserType       @default(USER)
+  userStatus   UserStatus     @default(ENABLED)
   campBookings CampBookings[]
+
+  campSite CampSite[]
 }
 
 model Blog {
@@ -79,36 +80,26 @@ model Blog {
   views           Int        @default(0)
 }
 
-
-model CampSite{
-  id Int @id @default(autoincrement()) 
-  name String
-  description String
-  slug String @unique
-  images String[]
-  pricePerNight Decimal @db.Decimal(10,2)
+model CampSite {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  description        String
+  slug               String             @unique
+  images             String[]
+  pricePerNight      Decimal            @db.Decimal(10, 2)
   campSiteFacilities CampSiteFacility[]
-  campHost CampHost?
-  bookings CampBookings[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime  @updatedAt
+  campHost           User?              @relation(fields: [hostId], references: [id])
+  bookings           CampBookings[]
+  hostId             Int?              
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
-model CampHost{
-  id Int @id @default(autoincrement())
-  fullName String
-  email String @unique
-  phoneNumber String
-  profilePicture String
 
-  campId Int @unique
-  campSite CampSite @relation(fields: [campId], references: [id])
-}
 model Facility {
-  id Int @id @default(autoincrement())
-  name String
-  icon String
-  slug String @unique
+  id        Int      @id @default(autoincrement())
+  name      String
+  icon      String
+  slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -117,29 +108,29 @@ model Facility {
 
 model CampSiteFacility {
   id Int @id @default(autoincrement())
-  
-  campId Int
+
+  campId     Int
   facilityId Int
 
   campSite CampSite @relation(fields: [campId], references: [id])
   facility Facility @relation(fields: [facilityId], references: [id])
 }
 
-model CampBookings{
-  id Int @default(autoincrement()) @id
-  userId Int
-  userInfo User @relation(fields: [userId],references: [id])
-  checkInDate DateTime
-  checkOutDate DateTime
-  totalPrice Decimal @db.Decimal(10,2)
+model CampBookings {
+  id            Int                  @id @default(autoincrement())
+  userId        Int
+  userInfo      User                 @relation(fields: [userId], references: [id])
+  checkInDate   DateTime
+  checkOutDate  DateTime
+  totalPrice    Decimal              @db.Decimal(10, 2)
   paymentStatus BookingPaymentStatus @default(PENDING)
-  campSiteId Int
-  bookingStatus BookingStatus @default(BOOKED)
-  campSite CampSite @relation(fields: [campSiteId], references: [id])
+  campSiteId    Int
+  bookingStatus BookingStatus        @default(BOOKED)
+  campSite      CampSite             @relation(fields: [campSiteId], references: [id])
 }
 
 model Gallery {
-  id              Int           @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   title           String
   description     String
   excerpt         String
@@ -156,7 +147,7 @@ model Gallery {
 }
 
 model AboutUs {
-  id         Int      @id @default(1)
+  id         Int         @id @default(1)
   aboutUs    String
   textbox_1  String
   textbox_2  String
@@ -164,19 +155,18 @@ model AboutUs {
   vision     String
   coreValues CoreValue[]
   stats      Stat[]
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime    @updatedAt
 }
 
 model Stat {
-  id        Int     @id @default(autoincrement())
-  value     String
-  icon      String
-  heading   String
+  id      Int    @id @default(autoincrement())
+  value   String
+  icon    String
+  heading String
 
   aboutUsId Int
   aboutUs   AboutUs @relation(fields: [aboutUsId], references: [id])
 }
-
 
 model CoreValue {
   id          Int    @id @default(autoincrement())
@@ -184,13 +174,13 @@ model CoreValue {
   description String
   icon        String
 
-  aboutUsId  Int
+  aboutUsId Int
   aboutUs   AboutUs @relation(fields: [aboutUsId], references: [id])
 }
 
 model Contact {
-  id           Int    @id @default(1)
-  email        String
-  phoneNumber  String
-  address      String
+  id          Int    @id @default(1)
+  email       String
+  phoneNumber String
+  address     String
 }

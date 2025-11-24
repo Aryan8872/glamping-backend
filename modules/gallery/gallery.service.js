@@ -3,14 +3,8 @@ import prisma from "../../utils/prismaClient.js";
 import { GalleryStatus } from "../../utils/types.js";
 import fs from "fs";
 import path from "path";
+import { removeFile } from "../../utils/uploads/storage.utils.js";
 
-/**
- * Helper to remove files from disk
- */
-const removeFile = (filePath) => {
-  const absolute = path.join(process.cwd(), filePath.replace(/^\//, ""));
-  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
-};
 
 /**
  * Create a gallery record
@@ -30,7 +24,7 @@ export const createGalleryService = async (data) => {
       description: data.description || "",
       excerpt: data.excerpt || "",
       images: data.images || [],
-      coverImage: data.coverImage || null,
+      coverImage: data.coverImage || '',
       slug: data.slug,
       metaTitle: data.metaTitle || null,
       metaDescription: data.metaDescription || null,
@@ -93,6 +87,9 @@ export const updateGalleryService = async (slug, updateData) => {
  */
 export const getGalleryService = async () => {
   return await prisma.gallery.findMany({
+    where:{galleryStatus: {
+      in:["PUBLISHED","DRAFT"]
+    }},
     select: {
       id: true,
       title: true,
@@ -128,5 +125,13 @@ export const updateGalleryStatusService = async (slug, status) => {
   return await prisma.gallery.update({
     where: { slug },
     data: { galleryStatus: status },
+  });
+};
+
+
+export const deleteGalleryService = async (id) => {
+  return await prisma.gallery.update({
+    where: { id:id },
+    data: { galleryStatus: "DELETED" },
   });
 };

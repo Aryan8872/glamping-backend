@@ -18,3 +18,12 @@ export const mapMulterFiles = (filesObj) => {
 
   return allPaths;
 };
+
+
+export const mapFilesToPaths = (files) => {
+  if (!files || !Array.isArray(files)) return [];
+  return files.map((f) => {
+    const publicPath = toPublicPath(path.resolve(f.path));
+    return publicPath.startsWith("/") ? publicPath : `/${publicPath}`;
+  });
+};
