@@ -4,7 +4,7 @@ import { removeFile } from "../../utils/uploads/storage.utils.js";
 
 class CampSiteService {
   async createCampSite(data) {
-    const slugBase = data.title
+    const slugBase = data.name
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "");
@@ -58,7 +58,7 @@ class CampSiteService {
     }
     let finalImages = campsite.images || [];
     if (data.images && Array.isArray(data.images)) finalImages = data.images;
-    if (data.newImages.length && Array.isArray(data.newImages)) {
+    if (data.newImages && data.newImages.length && Array.isArray(data.newImages)) {
       finalImages = [...finalImages, ...data.newImages];
     }
     return await prisma.campSite.update({

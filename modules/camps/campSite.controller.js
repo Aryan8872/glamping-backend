@@ -4,14 +4,15 @@ import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 
 export const createCampSite = asyncHandler(async (req, res) => {
   const body = req.body || {};
+  console.log(req.body);
   const campImages = req.files?.campImages
     ? mapFilesToPaths(req.files?.campImages)
     : [];
 
   const payload = {
     ...body,
-    images:campImages,
-  }
+    images: campImages,
+  };
   const newCamp = await campSiteService.createCampSite(payload);
   res.status(201).json({
     message: "CampSite created successfully",
@@ -35,9 +36,22 @@ export const getCampSiteById = asyncHandler(async (req, res) => {
 });
 
 export const updateCampSite = asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  console.log(body)
+  const removedImages = body.removedImages
+    ? JSON.parse(body.removedImages)
+    : [];
+  const images = body.images ? JSON.parse(body.images) : [];
+
+  const newImages = body.campImages ? mapFilesToPaths(req.files.campImages) : [];
   const camp = await campSiteService.updateCampSite(
     Number(req.params.id),
-    req.body
+    {
+      ...body,
+      removedImages,
+      images:images,
+      newImages
+    }
   );
 
   res.json({ message: "CampSite updated", data: camp });
