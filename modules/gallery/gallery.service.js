@@ -10,6 +10,7 @@ import { removeFile } from "../../utils/uploads/storage.utils.js";
  * Create a gallery record
  */
 export const createGalleryService = async (data) => {
+  console.log(data)
   if (!data.slug && data.title) {
     const slugBase = data.title
       .toLowerCase()

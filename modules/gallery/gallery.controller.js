@@ -18,6 +18,7 @@ import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 export const createGalleryController = async (req, res, next) => {
   try {
     const body = req.body || {};
+    console.log(body)
     const coverImage = req.files?.coverImage?.[0]
       ? mapFilesToPaths([req.files.coverImage[0]])[0]
       : null;
