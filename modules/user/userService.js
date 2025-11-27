@@ -17,3 +17,10 @@ export const getUserByIdService = async (id) => {
   const users = await prisma.user.findUnique({ where: { id } });
   return users;
 };
+export const getCampHostUsers = async () => {
+  const campHosts = await prisma.user.findMany({
+    where: { userType: "CAMPHOST" },
+    include:{campSite:true}
+  });
+  return campHosts
+};

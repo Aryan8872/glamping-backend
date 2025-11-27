@@ -3,6 +3,7 @@ import {
   getAllUserService,
   updateUserService,
   getUserByIdService,
+  getCampHostUsers,
 } from "./userService.js";
 
 export const createUserController = async (req, res) => {
@@ -33,4 +34,11 @@ export const getUserByIdController = async (req, res) => {
   return res
     .status(200)
     .json({ message: "successfully retrieved user by id", data: user });
+};
+
+export const getCampHostUsersController = async (req, res) => {
+  const hosts = await getCampHostUsers();
+  return res
+    .status(200)
+    .json({ message: "successfully retrieved camphosts", data: hosts });
 };

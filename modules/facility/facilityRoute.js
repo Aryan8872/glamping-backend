@@ -1,16 +1,13 @@
-// import { Router } from "express";
-// import {
-//   createGalleryController,
-//   getGalleryBySlugController,
-//   getGalleryController,
-//   updateGalleryController,
-// } from "../controllers/galleryController.js";
+import { Router } from "express";
+import { createFacility, deleteFacility, getAllFacilities, getFacilityById, updateFacility } from "./facilityController.js";
 
-// const facilityRoute = Router();
 
-// facilityRoute.post("/gallery/new", createGalleryController);
-// facilityRoute.patch("/gallery/update/:galleryId", updateGalleryController);
-// facilityRoute.get("/gallery/all", getGalleryController);
-// facilityRoute.get("/gallery/:slug", getGalleryBySlugController);
+const facilityRoute = Router();
 
-// export default facilityRoute;
+facilityRoute.post("/facility/new", createFacility);
+facilityRoute.get("/facility/all", getAllFacilities);
+facilityRoute.get("/facility/:id", getFacilityById);
+facilityRoute.put("/facility/:id", updateFacility);
+facilityRoute.delete("/facility:id", deleteFacility);
+
+export default facilityRoute;

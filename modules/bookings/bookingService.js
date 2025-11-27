@@ -1,56 +1,146 @@
-import prisma from "../../utils/prismaClient.js";
+// services/booking.service.js
+import prisma from "../../utils/prismaClient.js"; // adjust path
+import { BadRequestError, NotFoundError, ConflictError } from "../../utils/error.js";
+import { createBookingSchema, updateBookingSchema } from "../../validation/bookingSchema.js";
 
-export const createBookingService = async (data) => {
-  return prisma.campBookings.create({
-    data: {
-      userInfo: {
-        connect: { id: data.userId },
+class BookingService {
+  // Create booking (handles guest or registered user)
+  async createBooking(raw) {
+    const data = createBookingSchema.parse(raw);
+
+    const camp = await prisma.campSite.findUnique({ where: { id: data.campSiteId } });
+    if (!camp) throw new NotFoundError("Campsite not found");
+
+    // dates
+    const checkIn = new Date(data.checkInDate);
+    const checkOut = new Date(data.checkOutDate);
+    if (checkIn >= checkOut) throw new BadRequestError("checkInDate must be before checkOutDate");
+
+    // overlapping booking check (inclusive-exclusive)
+    const overlap = await prisma.campBookings.findFirst({
+      where: {
+        campSiteId: data.campSiteId,
+        bookingStatus: "BOOKED",
+        checkInDate: { lt: checkOut },
+        checkOutDate: { gt: checkIn },
       },
-      checkInDate: new Date(data.checkInDate),
-      checkOutDate: new Date(data.checkOutDate),
-      totalPrice: data.totalPrice,
-      campSite: {
-        connect: { id: data.campSiteId },
+    });
+    if (overlap) throw new ConflictError("Selected dates overlap with an existing booking");
+
+    // capacity checks (assumes camp has maxAdult, maxChildren, maxPets fields)
+    if (data.adults > (camp.maxAdult ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Adults exceed campsite capacity");
+    if (data.children > (camp.maxChildren ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Children exceed campsite capacity");
+    if (data.pets > (camp.maxPets ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Pets exceed campsite policy");
+
+    // require guest info when anonymous
+    if (!data.userId) {
+      if (!data.guestUserFullName || !data.guestUserEmail || !data.guestUserPhoneNumber) {
+        throw new BadRequestError("Guest name, email and phone are required for non-registered bookings");
+      }
+    }
+
+    const nights = this.calculateNights(checkIn, checkOut);
+    const totalPrice = Number(camp.pricePerNight) * nights; // ensure decimal handling as needed
+
+    // create booking inside transaction (future-proof)
+    const booking = await prisma.$transaction(async (tx) => {
+      const created = await tx.campBookings.create({
+        data: {
+          campSiteId: data.campSiteId,
+          checkInDate: checkIn,
+          checkOutDate: checkOut,
+          adults: data.adults,
+          children: data.children,
+          pets: data.pets,
+          totalPrice,
+          userId: data.userId ?? undefined,
+          guestUserFullName: data.guestUserFullName ?? undefined,
+          guestUserEmail: data.guestUserEmail ?? undefined,
+          guestUserPhoneNumber: data.guestUserPhoneNumber ?? undefined,
+        },
+      });
+
+      // optionally: create payment intent / send notifications — keep separate services
+
+      return created;
+    });
+
+    return booking;
+  }
+
+  async updateBooking(id, raw) {
+    const data = updateBookingSchema.parse(raw);
+    const booking = await prisma.campBookings.findUnique({ where: { id } });
+    if (!booking) throw new NotFoundError("Booking not found");
+
+    // If dates changed, validate overlap
+    if (data.checkInDate || data.checkOutDate) {
+      const checkIn = data.checkInDate ? new Date(data.checkInDate) : booking.checkInDate;
+      const checkOut = data.checkOutDate ? new Date(data.checkOutDate) : booking.checkOutDate;
+      if (checkIn >= checkOut) throw new BadRequestError("checkInDate must be before checkOutDate");
+
+      const overlap = await prisma.campBookings.findFirst({
+        where: {
+          id: { not: id },
+          campSiteId: booking.campSiteId,
+          bookingStatus: "BOOKED",
+          checkInDate: { lt: checkOut },
+          checkOutDate: { gt: checkIn },
+        },
+      });
+      if (overlap) throw new ConflictError("Updated dates overlap an existing booking");
+    }
+
+    // capacity checks if provided
+    if (data.adults || data.children || data.pets) {
+      const camp = await prisma.campSite.findUnique({ where: { id: booking.campSiteId }});
+      if (!camp) throw new NotFoundError("Campsite not found");
+
+      if (data.adults && data.adults > (camp.maxAdult ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Adults exceed campsite capacity");
+      if (data.children && data.children > (camp.maxChildren ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Children exceed campsite capacity");
+      if (data.pets && data.pets > (camp.maxPets ?? Number.MAX_SAFE_INTEGER)) throw new BadRequestError("Pets exceed campsite policy");
+    }
+
+    const updated = await prisma.campBookings.update({
+      where: { id },
+      data: {
+        adults: data.adults ?? undefined,
+        children: data.children ?? undefined,
+        pets: data.pets ?? undefined,
+        checkInDate: data.checkInDate ? new Date(data.checkInDate) : undefined,
+        checkOutDate: data.checkOutDate ? new Date(data.checkOutDate) : undefined,
+        bookingStatus: data.bookingStatus ?? undefined,
+        paymentStatus: data.paymentStatus ?? undefined,
       },
-    },
-  });
-};
+    });
 
-export const updateBookingStatusService = async (id, status) => {
-  const updatedBooking = await prisma.campBookings.update({
-    where: { id },
-    data: { bookingStatus: status },
-    include: {
-      campSite: true,
-      userInfo: true,
-    },
-  });
-  return updatedBooking;
-};
-export const getAllBookingService = async () => {
-  const campBookings = await prisma.campBookings.findMany({
-    select: {
-      id: true,
-      bookingStatus: true,
-      campSite: true,
-      checkInDate: true,
-      checkOutDate: true,
-      totalPrice: true,
-      userInfo: true,
-      paymentStatus: true,
-    },
-  });
-  return campBookings;
-};
+    return updated;
+  }
 
-export const getCampBookingsByIdService = async (id) => {
-  const campBooking = await prisma.campBookings.findUnique({ where: { id } });
-  return campBooking;
-};
+  async cancelBooking(id, opts = { byUserId: null, reason: null }) {
+    const existing = await prisma.campBookings.findUnique({ where: { id }});
+    if (!existing) throw new NotFoundError("Booking not found");
 
-export const getCampBookingsByUserIdService = async (id) => {
-  const campBooking = await prisma.campBookings.findUnique({
-    where: { userId: id },
-  });
-  return campBooking;
-};
+    // optionally: check permission: only the owner or admin can cancel
+    if (opts.byUserId && existing.userId && opts.byUserId !== existing.userId) {
+      // you might want to check admin role here
+      // throw new ForbiddenError("Not allowed to cancel");
+    }
+
+    const cancelled = await prisma.campBookings.update({
+      where: { id },
+      data: { bookingStatus: "CANCELED" },
+    });
+
+    // Optionally: enqueue refund, send notifications
+
+    return cancelled;
+  }
+
+  calculateNights(checkIn, checkOut) {
+    const ms = new Date(checkOut) - new Date(checkIn);
+    return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  }
+}
+
+export const bookingService = new BookingService();

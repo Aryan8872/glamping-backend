@@ -9,6 +9,7 @@ import aboutUsRoute from "./modules/aboutUs/aboutUsRoute.js";
 import bookingRoute from "./modules/bookings/bookingRoute.js"
 import campRoute from "./modules/camps/campRoute.js";
 import path from "path";
+import facilityRoute from "./modules/facility/facilityRoute.js";
 
 dotenv.config();
 const app = express();
@@ -28,7 +29,8 @@ app.use(
   contactRoute,
   aboutUsRoute,
   bookingRoute,
-  campRoute
+  campRoute,
+  facilityRoute
 );
 app.listen(port, () => {
   console.log(`server running at ${port}`);

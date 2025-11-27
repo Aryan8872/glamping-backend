@@ -49,15 +49,15 @@ enum BookingPaymentStatus {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  fullName     String
-  phoneNumber  String
-  email        String         @unique
-  userType     UserType       @default(USER)
-  userStatus   UserStatus     @default(ENABLED)
-  campBookings CampBookings[]
-
-  campSite CampSite[]
+  id             Int            @id @default(autoincrement())
+  fullName       String
+  phoneNumber    String
+  email          String         @unique
+  userType       UserType       @default(USER)
+  userStatus     UserStatus     @default(ENABLED)
+  campBookings   CampBookings[]
+  profilePicture String?
+  campSite       CampSite[]
 }
 
 model Blog {
@@ -90,9 +90,13 @@ model CampSite {
   campSiteFacilities CampSiteFacility[]
   campHost           User?              @relation(fields: [hostId], references: [id])
   bookings           CampBookings[]
-  hostId             Int?              
+  hostId             Int?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  isAvailable        Boolean            @default(true)
+  maxAdult           Int                @default(0)
+  maxChildren        Int                @default(0)
+  maxPets            Int                @default(0)
 }
 
 model Facility {
@@ -106,6 +110,7 @@ model Facility {
   campSites CampSiteFacility[]
 }
 
+// join table between camp and facility 
 model CampSiteFacility {
   id Int @id @default(autoincrement())
 
@@ -117,16 +122,22 @@ model CampSiteFacility {
 }
 
 model CampBookings {
-  id            Int                  @id @default(autoincrement())
-  userId        Int
-  userInfo      User                 @relation(fields: [userId], references: [id])
-  checkInDate   DateTime
-  checkOutDate  DateTime
-  totalPrice    Decimal              @db.Decimal(10, 2)
-  paymentStatus BookingPaymentStatus @default(PENDING)
-  campSiteId    Int
-  bookingStatus BookingStatus        @default(BOOKED)
-  campSite      CampSite             @relation(fields: [campSiteId], references: [id])
+  id                   Int                  @id @default(autoincrement())
+  userId               Int?
+  userInfo             User?                @relation(fields: [userId], references: [id])
+  checkInDate          DateTime
+  adults               Int                  @default(1)
+  children             Int                  @default(0)
+  pets                 Int                  @default(0)
+  guestUserFullName    String?
+  guestUserEmail       String?
+  guestUserPhoneNumber String?
+  checkOutDate         DateTime
+  totalPrice           Decimal              @db.Decimal(10, 2)
+  paymentStatus        BookingPaymentStatus @default(PENDING)
+  campSiteId           Int
+  bookingStatus        BookingStatus        @default(BOOKED)
+  campSite             CampSite             @relation(fields: [campSiteId], references: [id])
 }
 
 model Gallery {

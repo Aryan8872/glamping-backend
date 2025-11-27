@@ -1,30 +1,49 @@
-import { createBookingService,getAllBookingService,updateBookingStatusService,getCampBookingsByIdService } from "./bookingService.js"
+// controllers/booking.controller.js
+import { bookingService } from "./bookingService.js";
 
-export const createBookingController = async(req,res)=>{
-    const booking = await createBookingService(req.body)
-    return res.status(201).json({message:"created booking",data:booking})
-}
 
-export const updateBookingStatusController = async(req,res)=>{
-    const bookingId = parseInt(req.params.bookingId)
-    const status = req.params.bookingStatus
-    const booking = await updateBookingStatusService(bookingId,status)
-    return res.status(201).json({message:"created booking",data:booking})
-}
+export const createBookingController = async (req, res) => {
+  // req.body expected to match createBookingSchema
+  const payload = req.body;
+  try {
+    const booking = await bookingService.createBooking(payload);
+    return res.status(201).json({ message: "Booking created", data: booking });
+  } catch (err) {
+    // let your global error middleware convert AppError into response
+    // but if you don't have it, do minimal mapping:
+    if (err.status) return res.status(err.status).json({ message: err.message, code: err.code, extras: err.extras });
+    return res.status(500).json({ message: "Internal error", error: err.message });
+  }
+};
 
-export const getAllBookingController = async(req,res)=>{
-    const bookings  = await getAllBookingService();
-    return res.status(201).json({message:"retrieved all booking datas",data:bookings})
-}
+export const updateBookingController = async (req, res) => {
+  const id = Number(req.params.id);
+  const payload = req.body;
+  try {
+    const updated = await bookingService.updateBooking(id, payload);
+    return res.json({ message: "Booking updated", data: updated });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ message: err.message, code: err.code });
+    return res.status(500).json({ message: "Internal error", error: err.message });
+  }
+};
 
-export const getBookingByIdController = async(req,res)=>{
-    const bookingId = parseInt(req.params.bookingId)
-    const booking  = await getCampBookingsByIdService(bookingId);
-    return res.status(201).json({message:"retrieved booking data by id ",data:booking})
-}
+export const cancelBookingController = async (req, res) => {
+  const id = Number(req.params.id);
+  // optionally read user id from auth middleware
+  const byUserId = req.user?.id ?? null;
+  try {
+    const cancelled = await bookingService.cancelBooking(id, { byUserId, reason: req.body?.reason });
+    return res.json({ message: "Booking cancelled", data: cancelled });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ message: err.message, code: err.code });
+    return res.status(500).json({ message: "Internal error", error: err.message });
+  }
+};
 
-export const getBookingsByUserIdController = async(req,res)=>{
-    const userId = parseInt(req.params.userId)
-    const bookings  = await getBookingsByUserIdController(userId);
-    return res.status(201).json({message:"retrieved booking data by userid",data:bookings})
-}
+export const getBookingController = async (req, res) => {
+  const id = Number(req.params.id);
+  const booking = await bookingService.findById?.(id) || await prisma.campBookings.findUnique({ where: { id }});
+  if (!booking) return res.status(404).json({ message: "Not found" });
+  return res.json({ message: "OK", data: booking });
+};

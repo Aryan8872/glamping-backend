@@ -4,16 +4,22 @@ import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 
 export const createCampSite = asyncHandler(async (req, res) => {
   const body = req.body || {};
-  console.log(req.body);
+
   const campImages = req.files?.campImages
     ? mapFilesToPaths(req.files?.campImages)
     : [];
 
+  const facilities = body.facilities ? JSON.parse(body.facilities) : [];
+
   const payload = {
     ...body,
+    hostId: body.hostId ? Number(body.hostId) : null,
     images: campImages,
+    facilities,
   };
+
   const newCamp = await campSiteService.createCampSite(payload);
+
   res.status(201).json({
     message: "CampSite created successfully",
     data: newCamp,
@@ -37,21 +43,31 @@ export const getCampSiteById = asyncHandler(async (req, res) => {
 
 export const updateCampSite = asyncHandler(async (req, res) => {
   const body = req.body || {};
-  console.log(body)
+
   const removedImages = body.removedImages
     ? JSON.parse(body.removedImages)
     : [];
   const images = body.images ? JSON.parse(body.images) : [];
+  const newFacilities=body.newFacilities? JSON.parse(body.newFacilities):[]
+  const newImages = req.files?.campImages
+    ? mapFilesToPaths(req.files.campImages)
+    : [];
 
-  const newImages = body.campImages ? mapFilesToPaths(req.files.campImages) : [];
+  const facilities = body.facilities ? JSON.parse(body.facilities) : [];
+
+  const payload = {
+    ...body,
+    hostId: body.hostId ? Number(body.hostId) : null, // null removes host
+    removedImages,
+    images,
+    newFacilities,
+    newImages,
+    facilities,
+  };
+
   const camp = await campSiteService.updateCampSite(
     Number(req.params.id),
-    {
-      ...body,
-      removedImages,
-      images:images,
-      newImages
-    }
+    payload
   );
 
   res.json({ message: "CampSite updated", data: camp });
