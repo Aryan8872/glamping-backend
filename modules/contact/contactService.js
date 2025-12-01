@@ -1,15 +1,27 @@
 import prisma from "../../utils/prismaClient.js";
-
-export const upsertContactService = async (data) => {
-  const contactData = await prisma.contact.upsert({
+import { NotFoundError } from "../../utils/error.js";
+export const getContact = async () => {
+  let contact = await prisma.contact.findUnique({
     where: { id: 1 },
-    create: { id: 1, ...data },
-    update: { id: 1, ...data },
   });
-  return contactData;
+  // Create default if doesn't exist
+  if (!contact) {
+    contact = await prisma.contact.create({
+      data: {
+        id: 1,
+        email: "info@example.com",
+        phoneNumber: "+1234567890",
+        address: "123 Main St, City, Country",
+      },
+    });
+  }
+  return contact;
 };
-
-export const getContactService = async () => {
-  const conact = await prisma.contact.findUnique({where:{id:1}});
-  return conact;
+export const updateContact = async (data) => {
+  // Ensure contact exists
+  await getContact();
+  return await prisma.contact.update({
+    where: { id: 1 },
+    data,
+  });
 };

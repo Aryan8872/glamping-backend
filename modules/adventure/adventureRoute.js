@@ -1,0 +1,12 @@
+import express from "express";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import * as adventureController from "./adventureController.js";
+const adventureRoute = express.Router();
+adventureRoute.get("/adventure/all", asyncHandler(adventureController.getAllAdventuresController));
+adventureRoute.get("/adventure/:id", asyncHandler(adventureController.getAdventureByIdController));
+adventureRoute.get("/adventure/slug/:slug", asyncHandler(adventureController.getAdventureBySlugController));
+adventureRoute.post("/adventure/new", asyncHandler(adventureController.createAdventureController));
+adventureRoute.put("/adventure/update/:id", asyncHandler(adventureController.updateAdventureController));
+adventureRoute.delete("/adventure/delete/:id", asyncHandler(adventureController.deleteAdventureController));
+adventureRoute.post("/adventure/assign/:campId", asyncHandler(adventureController.assignAdventuresToCampController));
+export default adventureRoute;

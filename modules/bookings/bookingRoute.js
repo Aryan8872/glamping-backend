@@ -4,20 +4,24 @@ import {
   cancelBookingController,
   getBookingController,
   updateBookingController,
+  getAllBookingController
 } from "./bookingController.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 const bookingRoute = Router();
 
 bookingRoute.post("/booking/new", asyncHandler(createBookingController));
-bookingRoute.patch(
-  "/booking/update/:bookingId/:bookingStatus",
+bookingRoute.put(
+  "/booking/update/:id",
   asyncHandler(updateBookingController)
 );
+
+bookingRoute.get("/booking/all", asyncHandler(getAllBookingController));
+
 bookingRoute.post("/booking/:id/cancel", asyncHandler(cancelBookingController));
 
 // bookingRoute.get("/booking/all", asyncHandler(getAllBookingController));
-bookingRoute.get("/booking/:bookingId", asyncHandler(getBookingController));
+bookingRoute.get("/booking/:id", asyncHandler(getBookingController));
 // bookingRoute.get(
 //   "/booking/:userId",
 //   asyncHandler(getBookingsByUserIdController)

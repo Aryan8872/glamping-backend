@@ -1,6 +1,8 @@
 import { campSiteService } from "./campSite.service.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
+import { getCache, setCache } from "../../utils/cache.js";
+import { makeSearchCacheKey } from "../../utils/cacheKey.js";
 
 export const createCampSite = asyncHandler(async (req, res) => {
   const body = req.body || {};
@@ -48,7 +50,9 @@ export const updateCampSite = asyncHandler(async (req, res) => {
     ? JSON.parse(body.removedImages)
     : [];
   const images = body.images ? JSON.parse(body.images) : [];
-  const newFacilities=body.newFacilities? JSON.parse(body.newFacilities):[]
+  const newFacilities = body.newFacilities
+    ? JSON.parse(body.newFacilities)
+    : [];
   const newImages = req.files?.campImages
     ? mapFilesToPaths(req.files.campImages)
     : [];
@@ -77,4 +81,60 @@ export const deleteCampSite = asyncHandler(async (req, res) => {
   await campSiteService.deleteCampSite(Number(req.params.id));
 
   res.json({ message: "CampSite deleted successfully" });
+});
+
+export const searchCampsController = asyncHandler(async (req, res) => {
+  const src = req.validated ?? req.query;
+
+  const facilityIds = src.facilityIds
+    ? src.facilityIds.split(",").filter(Boolean)
+    : [];
+
+  const options = {
+    q: src.q,
+    page: Number(src.page || 1),
+    perPage: Number(src.limit || 12),
+    minPrice: src.minPrice,
+    maxPrice: src.maxPrice,
+    facilityIds,
+    checkIn: src.checkIn,
+    checkOut: src.checkOut,
+    adults: Number(src.adults || 1),
+    children: Number(src.children || 0),
+    pets: Number(src.pets || 0),
+    sort: src.sort || "relevance",
+  };
+
+  const cacheKey = makeSearchCacheKey(options);
+  const useCache = !(options.checkIn && options.checkOut);
+
+  let result;
+
+  if (useCache) {
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      // Flatten cached response to match frontend expectation
+      return res.json({
+        message: "from cache searched campsite successfully",
+        data: cached.results ?? [],
+        total: cached.total ?? 0,
+        page: cached.page ?? 1,
+        perPage: cached.perPage ?? options.perPage,
+      });
+    }
+  }
+
+  // Fetch from DB
+  result = await campSiteService.searchCamp(options);
+
+  // Cache response
+  await setCache(cacheKey, result, useCache ? 300 : 30);
+
+  res.json({
+    message: "searched campsite successfully",
+    data: result.results ?? [],
+    total: result.total ?? 0,
+    page: result.page ?? 1,
+    perPage: result.perPage ?? options.perPage,
+  });
 });

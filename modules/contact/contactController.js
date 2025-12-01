@@ -1,21 +1,11 @@
-import {
-  getContactService,
-  upsertContactService,
-} from "./contactService.js";
-
-export const saveContactController = async (req, res) => {
-  const newContact = await upsertContactService(req.body);
-  return res.status(200).json({ message: "contact created", data: newContact });
-};
-
-export const updateContactController = async (req, res) => {
-  const updatedContact = await upsertContactService(req.body);
-  return res
-    .status(200)
-    .json({ message: "contact updated", data: updatedContact });
-};
-
+import * as contactService from "./contactService.js";
+import {updateContactSchema } from "../../validation/contactSchema.js";
 export const getContactController = async (req, res) => {
-  const contactData = await getContactService();
-  return res.status(200).json({ message: "contact data", data: contactData });
+  const contact = await contactService.getContact();
+  res.json({ data: contact });
+};
+export const updateContactController = async (req, res) => {
+  const validatedData = updateContactSchema.parse(req.body);
+  const contact = await contactService.updateContact(validatedData);
+  res.json({ data: contact, message: "Contact updated successfully" });
 };

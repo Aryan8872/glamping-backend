@@ -81,22 +81,28 @@ model Blog {
 }
 
 model CampSite {
-  id                 Int                @id @default(autoincrement())
+  id                 Int                 @id @default(autoincrement())
   name               String
   description        String
-  slug               String             @unique
+  slug               String              @unique
   images             String[]
-  pricePerNight      Decimal            @db.Decimal(10, 2)
+  pricePerNight      Decimal             @db.Decimal(10, 2)
   campSiteFacilities CampSiteFacility[]
-  campHost           User?              @relation(fields: [hostId], references: [id])
+  campHost           User?               @relation(fields: [hostId], references: [id])
   bookings           CampBookings[]
   hostId             Int?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  isAvailable        Boolean            @default(true)
-  maxAdult           Int                @default(0)
-  maxChildren        Int                @default(0)
-  maxPets            Int                @default(0)
+  location           String?
+  latitude           Float?
+  longitude          Float?
+  adventures         CampSiteAdventure[]
+
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  isAvailable   Boolean                 @default(true)
+  maxAdult      Int                     @default(0)
+  maxChildren   Int                     @default(0)
+  maxPets       Int                     @default(0)
+  search_vector Unsupported("tsvector") @default(dbgenerated())
 }
 
 model Facility {
@@ -138,6 +144,33 @@ model CampBookings {
   campSiteId           Int
   bookingStatus        BookingStatus        @default(BOOKED)
   campSite             CampSite             @relation(fields: [campSiteId], references: [id])
+}
+
+model Adventure {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  slug            String   @unique
+  description     String
+  coverImage      String
+  bannerImage     String
+  title           String
+  pageDescription String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campSites CampSiteAdventure[]
+}
+
+model CampSiteAdventure {
+  id          Int @id @default(autoincrement())
+  campId      Int
+  adventureId Int
+
+  campSite  CampSite  @relation(fields: [campId], references: [id], onDelete: Cascade)
+  adventure Adventure @relation(fields: [adventureId], references: [id], onDelete: Cascade)
+
+  @@unique([campId, adventureId])
 }
 
 model Gallery {
