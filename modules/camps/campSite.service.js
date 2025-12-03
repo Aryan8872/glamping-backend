@@ -10,7 +10,10 @@ class CampSiteService {
       .replace(/[^a-z0-9\-]/g, "");
 
     const slug = `${slugBase}-${Date.now().toString().slice(-5)}`;
-
+    let adventureIds = data.adventureIds;
+    if (adventureIds && !Array.isArray(adventureIds)) {
+      adventureIds = [adventureIds];
+    }
     // Handle Facilities
     const facilitiesToConnect = [];
     const facilitiesToCreate = [];
@@ -48,6 +51,9 @@ class CampSiteService {
         pricePerNight: data.pricePerNight,
         slug,
         images: data.images || [],
+        location: data.location ?? null,
+        latitude: parseInt(data.latitude) ?? null,
+        longitude: parseInt(data.longitude) ?? null,
 
         ...(connectHost && { campHost: connectHost }),
 
@@ -61,10 +67,16 @@ class CampSiteService {
             })),
           ],
         },
+        adventures: {
+          create: (adventureIds || []).map((id) => ({
+            adventure: { connect: { id: Number(id) } },
+          })),
+        },
       },
       include: {
         campSiteFacilities: { include: { facility: true } },
         campHost: true,
+        adventures: { include: { adventure: true } },
       },
     });
   }
@@ -94,6 +106,7 @@ class CampSiteService {
             userStatus: true,
           },
         },
+        adventures: { include: { adventure: true } },
       },
     });
   }
@@ -107,7 +120,8 @@ class CampSiteService {
       where: { id: campId },
       include: {
         campSiteFacilities: { include: { facility: true } },
-        campHost:true,
+        campHost: true,
+        adventures: { include: { adventure: true } },
       },
     });
   }
@@ -116,6 +130,22 @@ class CampSiteService {
   async updateCampSite(id, data) {
     const campsite = await prisma.campSite.findUnique({ where: { id } });
     if (!campsite) throw new Error("Campsite not found");
+    console.log("updatte data", data);
+    let adventureIds = [];
+    if (data.adventureIds) {
+      if (Array.isArray(data.adventureIds)) {
+        adventureIds = data.adventureIds
+          .map(Number)
+          .filter((n) => Number.isFinite(n));
+      } else {
+        try {
+          const parsed = JSON.parse(data.adventureIds);
+          adventureIds = parsed.map(Number).filter((n) => Number.isFinite(n));
+        } catch {
+          adventureIds = [];
+        }
+      }
+    }
 
     if (data.removedImages?.length) {
       data.removedImages.forEach((img) => removeFile(img));
@@ -171,6 +201,16 @@ class CampSiteService {
         pricePerNight: data.pricePerNight ?? campsite.pricePerNight,
         images: finalImages,
         campHost: hostOperation,
+        location:
+          data.location !== undefined ? data.location : campsite.location,
+        latitude:
+          data.latitude !== undefined
+            ? parseInt(data.latitude)
+            : campsite.latitude,
+        longitude:
+          data.longitude !== undefined
+            ? parseInt(data.longitude)
+            : campsite.longitude,
 
         campSiteFacilities: {
           deleteMany: { campId: id },
@@ -183,10 +223,18 @@ class CampSiteService {
             })),
           ],
         },
+
+        adventures: {
+          deleteMany: { campId: id },
+          create: adventureIds.map((id) => ({
+            adventure: { connect: { id } },
+          })),
+        },
       },
       include: {
         campSiteFacilities: { include: { facility: true } },
         campHost: true,
+        adventures: { include: { adventure: true } },
       },
     });
   }

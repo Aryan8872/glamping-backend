@@ -9,3 +9,13 @@ export const GalleryStatus=[
     "DRAFT",
     "DELETED"
 ]
+
+export const BookingStatus=[
+    "BOOKED",
+    "CANCELED"
+]
+
+export const BookingPaymentStatus=[
+    "PENDING",
+    "CLEARED"
+]

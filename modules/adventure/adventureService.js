@@ -2,7 +2,7 @@ import prisma from "../../utils/prismaClient.js";
 import { NotFoundError, ConflictError } from "../../utils/error.js";
 export const getAllAdventures = async (includeInactive = false) => {
   const where = includeInactive ? {} : { isActive: true };
-  
+
   return await prisma.adventure.findMany({
     where,
     include: {
@@ -80,13 +80,23 @@ export const createAdventure = async (data) => {
     throw new ConflictError("Adventure with this slug already exists");
   }
   return await prisma.adventure.create({
-    data,
+    data: {
+      title: data.title,
+      pageDescription: data.pageDescription,
+      bannerImage: adventure.bannerImage,
+      coverImage: data.coverImage,
+      description: data.description,
+      name: data.name,
+      slug: data.slug,
+      isActive: data.isActive,
+    },
   });
 };
 export const updateAdventure = async (id, data) => {
   const adventure = await prisma.adventure.findUnique({
     where: { id: Number(id) },
   });
+  console.log("adventure update data",data)
   if (!adventure) {
     throw new NotFoundError("Adventure not found");
   }
@@ -101,7 +111,16 @@ export const updateAdventure = async (id, data) => {
   }
   return await prisma.adventure.update({
     where: { id: Number(id) },
-    data,
+    data: {
+      title: data.title ?? adventure.title,
+      pageDescription: data.pageDescription ?? adventure.pageDescription,
+      bannerImage: data.bannerImage??adventure.bannerImage,
+      coverImage: data.coverImage ?? adventure.coverImage,
+      description: data.description ?? adventure.description,
+      name: data.name ?? adventure.name,
+      slug: data.slug ?? adventure.slug,
+      isActive: data.isActive ?? adventure.isActive,
+    },
   });
 };
 export const deleteAdventure = async (id) => {

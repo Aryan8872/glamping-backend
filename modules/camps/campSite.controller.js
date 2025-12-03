@@ -3,30 +3,31 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 import { getCache, setCache } from "../../utils/cache.js";
 import { makeSearchCacheKey } from "../../utils/cacheKey.js";
+import { safeParseArray } from "../../utils/safeParseArray.js";
 
-export const createCampSite = asyncHandler(async (req, res) => {
-  const body = req.body || {};
+  export const createCampSite = asyncHandler(async (req, res) => {
+    const body = req.body || {};
 
-  const campImages = req.files?.campImages
-    ? mapFilesToPaths(req.files?.campImages)
-    : [];
+    const campImages = req.files?.campImages
+      ? mapFilesToPaths(req.files?.campImages)
+      : [];
 
-  const facilities = body.facilities ? JSON.parse(body.facilities) : [];
+    const facilities = safeParseArray(body.facilities);
 
-  const payload = {
-    ...body,
-    hostId: body.hostId ? Number(body.hostId) : null,
-    images: campImages,
-    facilities,
-  };
+    const payload = {
+      ...body,
+      hostId: body.hostId ? Number(body.hostId) : null,
+      images: campImages,
+      facilities,
+    };
 
-  const newCamp = await campSiteService.createCampSite(payload);
+    const newCamp = await campSiteService.createCampSite(payload);
 
-  res.status(201).json({
-    message: "CampSite created successfully",
-    data: newCamp,
+    res.status(201).json({
+      message: "CampSite created successfully",
+      data: newCamp,
+    });
   });
-});
 
 export const getAllCampSites = asyncHandler(async (req, res) => {
   const camps = await campSiteService.getAllCampSites();
@@ -46,18 +47,14 @@ export const getCampSiteById = asyncHandler(async (req, res) => {
 export const updateCampSite = asyncHandler(async (req, res) => {
   const body = req.body || {};
 
-  const removedImages = body.removedImages
-    ? JSON.parse(body.removedImages)
-    : [];
-  const images = body.images ? JSON.parse(body.images) : [];
-  const newFacilities = body.newFacilities
-    ? JSON.parse(body.newFacilities)
-    : [];
+  const removedImages = safeParseArray(body.removedImages);
+  const images = safeParseArray(body.images);
+  const newFacilities = safeParseArray(body.newFacilities);
   const newImages = req.files?.campImages
     ? mapFilesToPaths(req.files.campImages)
     : [];
 
-  const facilities = body.facilities ? JSON.parse(body.facilities) : [];
+  const facilities = safeParseArray(body.facilities)
 
   const payload = {
     ...body,
