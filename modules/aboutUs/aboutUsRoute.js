@@ -1,12 +1,22 @@
 import { Router } from "express";
-import {createOrUpdateAboutUs,getAboutUs,updateAboutUsStatController,deleteAboutUsStatController } from "./aboutUsController.js";
+import {
+  getAboutUsController,
+  createOrUpdateAboutUsController,
+  updateAboutUsStatController,
+  deleteAboutUsStatController,
+} from "./aboutUsController.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { updateAboutUsSchema } from "./aboutUsValidation.js";
 
-const aboutUsRoute = Router()
+const aboutUsRoute = Router();
 
-aboutUsRoute.post("/about/new",createOrUpdateAboutUs)
-aboutUsRoute.get("/about/all",getAboutUs)
-aboutUsRoute.put("/about/update",createOrUpdateAboutUs)
-aboutUsRoute.put("/stat/update/:statId",updateAboutUsStatController)
-aboutUsRoute.delete("/stat/delete/:statId",deleteAboutUsStatController)
+aboutUsRoute.get("/aboutus", getAboutUsController);
+aboutUsRoute.put(
+  "/aboutus",
+  validateRequest(updateAboutUsSchema),
+  createOrUpdateAboutUsController
+);
+aboutUsRoute.put("/aboutus/stat/:id", updateAboutUsStatController);
+aboutUsRoute.delete("/aboutus/stat/:id", deleteAboutUsStatController);
 
-export default aboutUsRoute
+export default aboutUsRoute;

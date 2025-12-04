@@ -1,41 +1,41 @@
-import { campSiteService } from "./campSite.service.js";
+import * as campService from "./campService.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
 import { getCache, setCache } from "../../utils/cache.js";
 import { makeSearchCacheKey } from "../../utils/cacheKey.js";
 import { safeParseArray } from "../../utils/safeParseArray.js";
 
-  export const createCampSite = asyncHandler(async (req, res) => {
-    const body = req.body || {};
+export const createCampController = asyncHandler(async (req, res) => {
+  const body = req.validated || req.body || {};
 
-    const campImages = req.files?.campImages
-      ? mapFilesToPaths(req.files?.campImages)
-      : [];
+  const campImages = req.files?.campImages
+    ? mapFilesToPaths(req.files?.campImages)
+    : [];
 
-    const facilities = safeParseArray(body.facilities);
+  const facilities = safeParseArray(body.facilities);
 
-    const payload = {
-      ...body,
-      hostId: body.hostId ? Number(body.hostId) : null,
-      images: campImages,
-      facilities,
-    };
+  const payload = {
+    ...body,
+    hostId: body.hostId ? Number(body.hostId) : null,
+    images: campImages,
+    facilities,
+  };
 
-    const newCamp = await campSiteService.createCampSite(payload);
+  const newCamp = await campService.createCampSite(payload);
 
-    res.status(201).json({
-      message: "CampSite created successfully",
-      data: newCamp,
-    });
+  res.status(201).json({
+    message: "CampSite created successfully",
+    data: newCamp,
   });
+});
 
-export const getAllCampSites = asyncHandler(async (req, res) => {
-  const camps = await campSiteService.getAllCampSites();
+export const getAllCampsController = asyncHandler(async (req, res) => {
+  const camps = await campService.getAllCampSites();
   res.json({ message: "CampSites fetched", data: camps });
 });
 
-export const getCampSiteById = asyncHandler(async (req, res) => {
-  const camp = await campSiteService.getCampSiteById(Number(req.params.id));
+export const getCampByIdController = asyncHandler(async (req, res) => {
+  const camp = await campService.getCampSiteById(Number(req.params.id));
 
   if (!camp) {
     return res.status(404).json({ message: "CampSite not found" });
@@ -44,8 +44,8 @@ export const getCampSiteById = asyncHandler(async (req, res) => {
   res.json({ message: "CampSite found", data: camp });
 });
 
-export const updateCampSite = asyncHandler(async (req, res) => {
-  const body = req.body || {};
+export const updateCampController = asyncHandler(async (req, res) => {
+  const body = req.validated || req.body || {};
 
   const removedImages = safeParseArray(body.removedImages);
   const images = safeParseArray(body.images);
@@ -54,7 +54,7 @@ export const updateCampSite = asyncHandler(async (req, res) => {
     ? mapFilesToPaths(req.files.campImages)
     : [];
 
-  const facilities = safeParseArray(body.facilities)
+  const facilities = safeParseArray(body.facilities);
 
   const payload = {
     ...body,
@@ -66,16 +66,13 @@ export const updateCampSite = asyncHandler(async (req, res) => {
     facilities,
   };
 
-  const camp = await campSiteService.updateCampSite(
-    Number(req.params.id),
-    payload
-  );
+  const camp = await campService.updateCampSite(Number(req.params.id), payload);
 
   res.json({ message: "CampSite updated", data: camp });
 });
 
-export const deleteCampSite = asyncHandler(async (req, res) => {
-  await campSiteService.deleteCampSite(Number(req.params.id));
+export const deleteCampController = asyncHandler(async (req, res) => {
+  await campService.deleteCampSite(Number(req.params.id));
 
   res.json({ message: "CampSite deleted successfully" });
 });
@@ -122,7 +119,7 @@ export const searchCampsController = asyncHandler(async (req, res) => {
   }
 
   // Fetch from DB
-  result = await campSiteService.searchCamp(options);
+  result = await campService.searchCamp(options);
 
   // Cache response
   await setCache(cacheKey, result, useCache ? 300 : 30);

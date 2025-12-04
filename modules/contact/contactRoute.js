@@ -1,7 +1,18 @@
-import express from "express";
-import { asyncHandler } from "../../utils/asyncHandler.js";
-import * as contactController from "./contactController.js";
-const contactRoute = express.Router();
-contactRoute.get("/contact", asyncHandler(contactController.getContactController));
-contactRoute.put("/contact/update", asyncHandler(contactController.updateContactController));
+import { Router } from "express";
+import {
+  getContactController,
+  updateContactController,
+} from "./contactController.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { updateContactSchema } from "./contactValidation.js";
+
+const contactRoute = Router();
+
+contactRoute.get("/contact", getContactController);
+contactRoute.put(
+  "/contact",
+  validateRequest(updateContactSchema),
+  updateContactController
+);
+
 export default contactRoute;

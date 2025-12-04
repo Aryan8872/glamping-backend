@@ -1,13 +1,34 @@
 import { Router } from "express";
-import { createFacility, deleteFacility, getAllFacilities, getFacilityById, updateFacility } from "./facilityController.js";
-
+import {
+  createFacilityController,
+  getAllFacilitiesController,
+  getFacilityByIdController,
+  updateFacilityController,
+  deleteFacilityController,
+} from "./facilityController.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import {
+  createFacilitySchema,
+  updateFacilitySchema,
+} from "./facilityValidation.js";
 
 const facilityRoute = Router();
 
-facilityRoute.post("/facility/new", createFacility);
-facilityRoute.get("/facility/all", getAllFacilities);
-facilityRoute.get("/facility/:id", getFacilityById);
-facilityRoute.put("/facility/:id", updateFacility);
-facilityRoute.delete("/facility:id", deleteFacility);
+facilityRoute.post(
+  "/facility/new",
+  validateRequest(createFacilitySchema),
+  createFacilityController
+);
+
+facilityRoute.get("/facility/all", getAllFacilitiesController);
+facilityRoute.get("/facility/:id", getFacilityByIdController);
+
+facilityRoute.put(
+  "/facility/:id",
+  validateRequest(updateFacilitySchema),
+  updateFacilityController
+);
+
+facilityRoute.delete("/facility/:id", deleteFacilityController);
 
 export default facilityRoute;

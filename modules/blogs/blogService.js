@@ -1,5 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { BlogStatus } from "../../utils/types.js";
+
 export const addNewBlogService = async (data) => {
   const blogdata = await prisma.blog.create({ data });
   return blogdata;

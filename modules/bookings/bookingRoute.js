@@ -1,30 +1,33 @@
 import { Router } from "express";
 import {
   createBookingController,
+  updateBookingController,
   cancelBookingController,
   getBookingController,
-  updateBookingController,
-  getAllBookingController
+  getAllBookingController,
 } from "./bookingController.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import {
+  createBookingSchema,
+  updateBookingStatusSchema,
+} from "./bookingValidation.js";
 
 const bookingRoute = Router();
 
-bookingRoute.post("/booking/new", asyncHandler(createBookingController));
-bookingRoute.put(
-  "/booking/update/:id",
-  asyncHandler(updateBookingController)
+bookingRoute.post(
+  "/booking/new",
+  validateRequest(createBookingSchema),
+  createBookingController
 );
 
-bookingRoute.get("/booking/all", asyncHandler(getAllBookingController));
+bookingRoute.put(
+  "/booking/:id",
+  validateRequest(updateBookingStatusSchema.partial()), // Allow partial updates or define a separate update schema if needed
+  updateBookingController
+);
 
-bookingRoute.post("/booking/:id/cancel", asyncHandler(cancelBookingController));
-
-// bookingRoute.get("/booking/all", asyncHandler(getAllBookingController));
-bookingRoute.get("/booking/:id", asyncHandler(getBookingController));
-// bookingRoute.get(
-//   "/booking/:userId",
-//   asyncHandler(getBookingsByUserIdController)
-// );
+bookingRoute.patch("/booking/:id/cancel", cancelBookingController);
+bookingRoute.get("/booking/:id", getBookingController);
+bookingRoute.get("/booking/all", getAllBookingController);
 
 export default bookingRoute;

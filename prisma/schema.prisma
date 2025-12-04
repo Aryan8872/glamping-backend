@@ -48,6 +48,11 @@ enum BookingPaymentStatus {
   CLEARED
 }
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 model User {
   id             Int            @id @default(autoincrement())
   fullName       String
@@ -95,6 +100,7 @@ model CampSite {
   latitude           Float?
   longitude          Float?
   adventures         CampSiteAdventure[]
+  discounts          Discount[]
 
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
@@ -160,6 +166,26 @@ model Adventure {
   updatedAt       DateTime @updatedAt
 
   campSites CampSiteAdventure[]
+  discounts Discount[]
+}
+
+model Discount {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  type        DiscountType
+  amount      Float
+  active      Boolean      @default(true)
+  isFeatured  Boolean      @default(false)
+
+  campId      Int?
+  adventureId Int?
+
+  camp      CampSite?  @relation(fields: [campId], references: [id])
+  adventure Adventure? @relation(fields: [adventureId], references: [id])
+
+  startsAt DateTime
+  endsAt   DateTime?
 }
 
 model CampSiteAdventure {

@@ -1,8 +1,8 @@
-import { facilityService } from "./facilityService.js";
+import * as facilityService from "./facilityService.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
-export const createFacility = asyncHandler(async (req, res) => {
-  const body = req.body || {};
+export const createFacilityController = asyncHandler(async (req, res) => {
+  const body = req.validated || req.body || {};
 
   const newFacility = await facilityService.createFacility(body);
 
@@ -12,12 +12,12 @@ export const createFacility = asyncHandler(async (req, res) => {
   });
 });
 
-export const getAllFacilities = asyncHandler(async (req, res) => {
+export const getAllFacilitiesController = asyncHandler(async (req, res) => {
   const facilities = await facilityService.getAllFacilities();
   res.json({ message: "Facilities fetched", data: facilities });
 });
 
-export const getFacilityById = asyncHandler(async (req, res) => {
+export const getFacilityByIdController = asyncHandler(async (req, res) => {
   const facility = await facilityService.getFacilityById(Number(req.params.id));
 
   if (!facility) {
@@ -27,8 +27,8 @@ export const getFacilityById = asyncHandler(async (req, res) => {
   res.json({ message: "Facility found", data: facility });
 });
 
-export const updateFacility = asyncHandler(async (req, res) => {
-  const body = req.body || {};
+export const updateFacilityController = asyncHandler(async (req, res) => {
+  const body = req.validated || req.body || {};
 
   const updated = await facilityService.updateFacility(
     Number(req.params.id),
@@ -41,7 +41,7 @@ export const updateFacility = asyncHandler(async (req, res) => {
   });
 });
 
-export const deleteFacility = asyncHandler(async (req, res) => {
+export const deleteFacilityController = asyncHandler(async (req, res) => {
   await facilityService.deleteFacility(Number(req.params.id));
 
   res.json({ message: "Facility deleted successfully" });

@@ -1,39 +1,50 @@
-import express from "express";
+import { Router } from "express";
 import {
-  createCampSite,
-  getAllCampSites,
-  getCampSiteById,
-  updateCampSite,
-  deleteCampSite,
+  createCampController,
+  getAllCampsController,
+  getCampByIdController,
+  updateCampController,
+  deleteCampController,
   searchCampsController,
-} from "./campSite.controller.js";
-import { multerErrorHandler } from "../../utils/uploads/multerErrors.js";
-import { campUploadMiddleware } from "../../utils/uploads/multer.camp.js";
-import validate from "../../middleware/validate.js";
-import { searchQuerySchema } from "../../validation/searchSchema.js";
+} from "./campController.js";
+import createMulter from "../../utils/uploads/multerFactory.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
+import {
+  createCampSchema,
+  updateCampSchema,
+  searchCampSchema,
+} from "./campValidation.js";
 
-const campRoute = express.Router();
+const campRoute = Router();
+const upload = createMulter("campsite", {
+  allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+  maxSizeBytes: 5 * 1024 * 1024,
+});
 
 campRoute.post(
-  "/camp/new",
-  campUploadMiddleware,
-  multerErrorHandler,
-  createCampSite
+  "/campsite/new",
+  upload.fields([{ name: "campImages", maxCount: 10 }]),
+  validateRequest(createCampSchema),
+  createCampController
 );
-campRoute.get("/camp/all", getAllCampSites);
 
-// ✅ MOVE THIS UP (Before /:id)
-campRoute.get('/camp/search', validate(searchQuerySchema, { in: 'query' }), searchCampsController);
+campRoute.get("/campsite/all", getAllCampsController);
 
-// ⬇️ ID route must be AFTER specific routes like /search, /all, etc.
-campRoute.get("/camp/:id", getCampSiteById);
+campRoute.get(
+  "/campsite/search",
+  validateRequest(searchCampSchema, "query"),
+  searchCampsController
+);
+
+campRoute.get("/campsite/:id", getCampByIdController);
 
 campRoute.put(
-  "/camp/:id",
-  campUploadMiddleware,
-  multerErrorHandler,
-  updateCampSite
+  "/campsite/:id",
+  upload.fields([{ name: "campImages", maxCount: 10 }]),
+  validateRequest(updateCampSchema),
+  updateCampController
 );
-campRoute.delete("/camp/:id", deleteCampSite);
+
+campRoute.delete("/campsite/:id", deleteCampController);
 
 export default campRoute;

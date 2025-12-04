@@ -12,6 +12,7 @@ import path from "path";
 import facilityRoute from "./modules/facility/facilityRoute.js";
 import dashboardRoute from "./modules/dashboard/dashboardRoute.js";
 import adventureRoute from "./modules/adventure/adventureRoute.js";
+import discountRoute from "./modules/discount/discountRoute.js";
 
 dotenv.config();
 const app = express();
@@ -35,7 +36,8 @@ app.use(
   facilityRoute,
   dashboardRoute,
   contactRoute,
-  adventureRoute
+  adventureRoute,
+  discountRoute
 );
 app.listen(port, () => {
   console.log(`server running at ${port}`);

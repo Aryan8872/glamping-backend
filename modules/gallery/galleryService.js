@@ -1,16 +1,11 @@
-// src/modules/gallery/gallery.service.js
 import prisma from "../../utils/prismaClient.js";
 import { GalleryStatus } from "../../utils/types.js";
-import fs from "fs";
-import path from "path";
 import { removeFile } from "../../utils/uploads/storage.utils.js";
-
 
 /**
  * Create a gallery record
  */
 export const createGalleryService = async (data) => {
-  console.log(data)
   if (!data.slug && data.title) {
     const slugBase = data.title
       .toLowerCase()
@@ -25,7 +20,7 @@ export const createGalleryService = async (data) => {
       description: data.description || "",
       excerpt: data.excerpt || "",
       images: data.images || [],
-      coverImage: data.coverImage || '',
+      coverImage: data.coverImage || "",
       slug: data.slug,
       metaTitle: data.metaTitle || null,
       metaDescription: data.metaDescription || null,
@@ -71,7 +66,7 @@ export const updateGalleryService = async (slug, updateData) => {
       description: updateData.description ?? exists.description,
       excerpt: updateData.excerpt ?? exists.excerpt,
       images: finalImages,
-      galleryStatus:updateData.galleryStatus??exists.galleryStatus,
+      galleryStatus: updateData.galleryStatus ?? exists.galleryStatus,
       coverImage: finalCoverImage,
       metaTitle: updateData.metaTitle ?? exists.metaTitle,
       metaDescription: updateData.metaDescription ?? exists.metaDescription,
@@ -88,9 +83,11 @@ export const updateGalleryService = async (slug, updateData) => {
  */
 export const getGalleryService = async () => {
   return await prisma.gallery.findMany({
-    where:{galleryStatus: {
-      in:["PUBLISHED","DRAFT"]
-    }},
+    where: {
+      galleryStatus: {
+        in: ["PUBLISHED", "DRAFT"],
+      },
+    },
     select: {
       id: true,
       title: true,
@@ -129,10 +126,9 @@ export const updateGalleryStatusService = async (slug, status) => {
   });
 };
 
-
 export const deleteGalleryService = async (id) => {
   return await prisma.gallery.update({
-    where: { id:id },
+    where: { id: id },
     data: { galleryStatus: "DELETED" },
   });
 };
