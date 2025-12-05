@@ -19,6 +19,7 @@ bookingRoute.post(
   validateRequest(createBookingSchema),
   createBookingController
 );
+bookingRoute.get("/booking/all", getAllBookingController);
 
 bookingRoute.put(
   "/booking/:id",
@@ -28,6 +29,5 @@ bookingRoute.put(
 
 bookingRoute.patch("/booking/:id/cancel", cancelBookingController);
 bookingRoute.get("/booking/:id", getBookingController);
-bookingRoute.get("/booking/all", getAllBookingController);
 
 export default bookingRoute;
