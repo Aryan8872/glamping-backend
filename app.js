@@ -23,7 +23,9 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
+app.use(cors({
+  origin: "https://glamping-admin-gxd3.vercel.app/",
+}));
 app.use(express.json());
 app.use(
   userroute,
