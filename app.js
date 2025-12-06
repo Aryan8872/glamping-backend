@@ -39,6 +39,7 @@ app.use(
   adventureRoute,
   discountRoute
 );
+export default app
 app.listen(port, () => {
   console.log(`server running at ${port}`);
 });
