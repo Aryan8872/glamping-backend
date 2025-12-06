@@ -20,12 +20,14 @@ const port = 8080;
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-  origin: "https://glamping-admin-gxd3.vercel.app/",
-}));
+app.use(
+  cors({
+    origin: "https://glamping-admin-gxd3.vercel.app",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  })
+);
 app.use(express.json());
 app.use(
   userroute,
@@ -41,7 +43,7 @@ app.use(
   adventureRoute,
   discountRoute
 );
-export default app
+export default app;
 app.listen(port, () => {
   console.log(`server running at ${port}`);
 });
