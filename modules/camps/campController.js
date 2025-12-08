@@ -71,6 +71,16 @@ export const updateCampController = asyncHandler(async (req, res) => {
     newFacilities,
     newImages,
     facilities,
+    maxAdult: body.maxAdult !== undefined ? Number(body.maxAdult) : undefined,
+    maxChildren:
+      body.maxChildren !== undefined ? Number(body.maxChildren) : undefined,
+    maxPets: body.maxPets !== undefined ? Number(body.maxPets) : undefined,
+    isFeatured:
+      body.isFeatured !== undefined
+        ? String(body.isFeatured) === "true"
+        : undefined,
+    pricePerNight:
+      body.pricePerNight !== undefined ? Number(body.pricePerNight) : undefined,
   };
 
   const camp = await campService.updateCampSite(Number(req.params.id), payload);

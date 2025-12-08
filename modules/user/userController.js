@@ -11,7 +11,15 @@ export const createUserController = async (req, res) => {
   const profilePicture = req.file
     ? `/uploads/users/${req.file.filename}`
     : null;
-  const payload = { ...req.body, ...(profilePicture && { profilePicture }) };
+
+  const payload = {
+    ...req.body,
+    ...(profilePicture && { profilePicture }),
+    isFeatured: req.body.isFeatured === "true" || req.body.isFeatured === true,
+    yearsOfExperience: req.body.yearsOfExperience
+      ? Number(req.body.yearsOfExperience)
+      : 0,
+  };
 
   const newuser = await createUserService(payload);
   return res
@@ -26,8 +34,18 @@ export const updateUserController = async (req, res) => {
     : undefined;
 
   // Clean up undefined values from body if any, or handle in service
-  const payload = { ...req.body };
-  if (profilePicture) payload.profilePicture = profilePicture;
+  const payload = {
+    ...req.body,
+    ...(profilePicture && { profilePicture }),
+  };
+
+  if (payload.isFeatured !== undefined) {
+    payload.isFeatured =
+      payload.isFeatured === "true" || payload.isFeatured === true;
+  }
+  if (payload.yearsOfExperience !== undefined) {
+    payload.yearsOfExperience = Number(payload.yearsOfExperience);
+  }
 
   const newuser = await updateUserService(userId, payload);
   return res
