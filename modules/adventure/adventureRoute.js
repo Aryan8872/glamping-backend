@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import * as adventureController from "./adventureController.js";
 import { adventureUploadMiddleware } from "../../utils/uploads/multer.adventure.js";
 import { multerErrorHandler } from "../../utils/uploads/multerErrors.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import {
   createAdventureSchema,
   updateAdventureSchema,
@@ -22,19 +22,20 @@ adventureRoute.get(
   "/adventure/slug/:slug",
   asyncHandler(adventureController.getAdventureBySlugController)
 );
-adventureRoute.put(
-  "/adventure/update/:id",
-  adventureUploadMiddleware,
-  multerErrorHandler,
-  validateRequest(updateAdventureSchema),
-  asyncHandler(adventureController.updateAdventureController)
-);
+
 adventureRoute.post(
   "/adventure/new",
   adventureUploadMiddleware,
   multerErrorHandler,
-  validateRequest(createAdventureSchema),
+
   asyncHandler(adventureController.createAdventureController)
+);
+adventureRoute.put(
+  "/adventure/update/:id",
+  adventureUploadMiddleware,
+  multerErrorHandler,
+
+  asyncHandler(adventureController.updateAdventureController)
 );
 
 adventureRoute.delete(

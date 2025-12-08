@@ -13,6 +13,8 @@ import facilityRoute from "./modules/facility/facilityRoute.js";
 import dashboardRoute from "./modules/dashboard/dashboardRoute.js";
 import adventureRoute from "./modules/adventure/adventureRoute.js";
 import discountRoute from "./modules/discount/discountRoute.js";
+import experienceRoute from "./modules/experiences/experienceRoute.js";
+import destinationRoute from "./modules/destinations/destinationRoute.js";
 
 dotenv.config();
 const app = express();
@@ -24,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "https://glamping-admin-gxd3.vercel.app",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
@@ -41,7 +43,9 @@ app.use(
   dashboardRoute,
   contactRoute,
   adventureRoute,
-  discountRoute
+  discountRoute,
+  experienceRoute,
+  destinationRoute
 );
 export default app;
 app.listen(port, () => {

@@ -5,7 +5,7 @@ import {
   updateDiscountService,
   deleteDiscountService,
   getActiveDiscountsService,
-  getFeaturedDiscountsService,
+  getFeaturedDiscountService,
 } from "./discountService.js";
 
 export const createDiscountController = async (req, res) => {
@@ -54,9 +54,9 @@ export const getActiveDiscountsController = async (req, res) => {
     .json({ message: "Active discounts retrieved", data: discounts });
 };
 
-export const getFeaturedDiscountsController = async (req, res) => {
-  const discounts = await getFeaturedDiscountsService();
+export const getFeaturedDiscountController = async (req, res) => {
+  const discount = await getFeaturedDiscountService();
   return res
     .status(200)
-    .json({ message: "Featured discounts retrieved", data: discounts });
+    .json({ message: "Featured discount retrieved", data: discount });
 };

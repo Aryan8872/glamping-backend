@@ -6,7 +6,7 @@ import {
   getBookingController,
   getAllBookingController,
 } from "./bookingController.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import {
   createBookingSchema,
   updateBookingStatusSchema,
@@ -16,14 +16,14 @@ const bookingRoute = Router();
 
 bookingRoute.post(
   "/booking/new",
-  validateRequest(createBookingSchema),
+
   createBookingController
 );
 bookingRoute.get("/booking/all", getAllBookingController);
 
 bookingRoute.put(
   "/booking/:id",
-  validateRequest(updateBookingStatusSchema.partial()), // Allow partial updates or define a separate update schema if needed
+
   updateBookingController
 );
 

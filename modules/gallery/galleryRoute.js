@@ -7,7 +7,7 @@ import {
   updateGalleryStatusController,
   deleteGalleryController,
 } from "./galleryController.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import {
   createGallerySchema,
   updateGallerySchema,
@@ -26,7 +26,7 @@ galleryRoute.post(
     { name: "coverImage", maxCount: 1 },
     { name: "galleryImage", maxCount: 10 },
   ]),
-  validateRequest(createGallerySchema),
+
   createGalleryController
 );
 
@@ -39,7 +39,7 @@ galleryRoute.put(
     { name: "coverImage", maxCount: 1 },
     { name: "galleryImage", maxCount: 10 },
   ]),
-  validateRequest(updateGallerySchema),
+
   updateGalleryController
 );
 

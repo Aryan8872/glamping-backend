@@ -5,7 +5,7 @@ import {
   updateAboutUsStatController,
   deleteAboutUsStatController,
 } from "./aboutUsController.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import { updateAboutUsSchema } from "./aboutUsValidation.js";
 
 const aboutUsRoute = Router();
@@ -13,7 +13,7 @@ const aboutUsRoute = Router();
 aboutUsRoute.get("/aboutus", getAboutUsController);
 aboutUsRoute.put(
   "/aboutus",
-  validateRequest(updateAboutUsSchema),
+
   createOrUpdateAboutUsController
 );
 aboutUsRoute.put("/aboutus/stat/:id", updateAboutUsStatController);

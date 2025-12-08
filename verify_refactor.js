@@ -96,7 +96,7 @@ const verifySchemas = () => {
 
     console.log("\n🎉 All schemas validated successfully!");
   } catch (error) {
-    console.error("❌ Schema Verification Failed:", error.errors);
+    console.error("❌ Schema Verification Failed:", error.issues);
     process.exit(1);
   }
 };

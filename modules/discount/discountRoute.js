@@ -7,9 +7,9 @@ import {
   updateDiscountController,
   deleteDiscountController,
   getActiveDiscountsController,
-  getFeaturedDiscountsController,
+  getFeaturedDiscountController,
 } from "./discountController.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import {
   createDiscountSchema,
   updateDiscountSchema,
@@ -19,7 +19,7 @@ const discountRoute = Router();
 
 discountRoute.post(
   "/discount/new",
-  validateRequest(createDiscountSchema),
+
   asyncHandler(createDiscountController)
 );
 discountRoute.get("/discount/all", asyncHandler(getAllDiscountsController));
@@ -29,12 +29,12 @@ discountRoute.get(
 );
 discountRoute.get(
   "/discount/featured",
-  asyncHandler(getFeaturedDiscountsController)
+  asyncHandler(getFeaturedDiscountController)
 );
 discountRoute.get("/discount/:id", asyncHandler(getDiscountByIdController));
 discountRoute.put(
   "/discount/:id",
-  validateRequest(updateDiscountSchema),
+
   asyncHandler(updateDiscountController)
 );
 discountRoute.delete("/discount/:id", asyncHandler(deleteDiscountController));

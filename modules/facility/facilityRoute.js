@@ -6,7 +6,7 @@ import {
   updateFacilityController,
   deleteFacilityController,
 } from "./facilityController.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+
 import {
   createFacilitySchema,
   updateFacilitySchema,
@@ -16,7 +16,7 @@ const facilityRoute = Router();
 
 facilityRoute.post(
   "/facility/new",
-  validateRequest(createFacilitySchema),
+
   createFacilityController
 );
 
@@ -25,7 +25,7 @@ facilityRoute.get("/facility/:id", getFacilityByIdController);
 
 facilityRoute.put(
   "/facility/:id",
-  validateRequest(updateFacilitySchema),
+
   updateFacilityController
 );
 

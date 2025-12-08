@@ -4,6 +4,7 @@ import {
   updateUserService,
   getUserByIdService,
   getCampHostUsers,
+  getFeaturedHosts,
 } from "./userService.js";
 
 export const createUserController = async (req, res) => {
@@ -41,4 +42,9 @@ export const getCampHostUsersController = async (req, res) => {
   return res
     .status(200)
     .json({ message: "successfully retrieved camphosts", data: hosts });
+};
+
+export const getFeaturedHostsController = async (req, res) => {
+  const hosts = await getFeaturedHosts();
+  return res.status(200).json({ data: hosts });
 };

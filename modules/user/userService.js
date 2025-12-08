@@ -20,7 +20,18 @@ export const getUserByIdService = async (id) => {
 export const getCampHostUsers = async () => {
   const campHosts = await prisma.user.findMany({
     where: { userType: "CAMPHOST" },
-    include:{campSite:true}
+    include: { campSite: true },
   });
-  return campHosts
+  return campHosts;
+};
+
+export const getFeaturedHosts = async () => {
+  return await prisma.user.findMany({
+    where: {
+      userType: "CAMPHOST",
+      isFeatured: true,
+    },
+    include: { campSite: true },
+    orderBy: { fullName: "asc" },
+  });
 };

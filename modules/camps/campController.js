@@ -7,18 +7,21 @@ import { safeParseArray } from "../../utils/safeParseArray.js";
 
 export const createCampController = asyncHandler(async (req, res) => {
   const body = req.validated || req.body || {};
-
   const campImages = req.files?.campImages
     ? mapFilesToPaths(req.files?.campImages)
     : [];
 
   const facilities = safeParseArray(body.facilities);
+  const adventureIds = safeParseArray(body.adventureIds);
+  const newFacilities = safeParseArray(body.newFacilities);
 
   const payload = {
     ...body,
     hostId: body.hostId ? Number(body.hostId) : null,
     images: campImages,
     facilities,
+    adventureIds,
+    newFacilities,
   };
 
   const newCamp = await campService.createCampSite(payload);
@@ -97,10 +100,17 @@ export const searchCampsController = asyncHandler(async (req, res) => {
     children: Number(src.children || 0),
     pets: Number(src.pets || 0),
     sort: src.sort || "relevance",
+    experience: src.experience,
+    destination: src.destination,
   };
 
+  console.log("🎯 Controller received:", { src });
+  console.log("📦 Options being passed to service:", options);
+
   const cacheKey = makeSearchCacheKey(options);
-  const useCache = !(options.checkIn && options.checkOut);
+
+  // Disable cache for experience/destination searches during debugging
+  const useCache = false; // !(options.checkIn && options.checkOut);
 
   let result;
 

@@ -83,7 +83,7 @@ export const createAdventure = async (data) => {
     data: {
       title: data.title,
       pageDescription: data.pageDescription,
-      bannerImage: adventure.bannerImage,
+      bannerImage: data.bannerImage,
       coverImage: data.coverImage,
       description: data.description,
       name: data.name,
@@ -96,7 +96,7 @@ export const updateAdventure = async (id, data) => {
   const adventure = await prisma.adventure.findUnique({
     where: { id: Number(id) },
   });
-  console.log("adventure update data",data)
+  console.log("adventure update data", data);
   if (!adventure) {
     throw new NotFoundError("Adventure not found");
   }
@@ -114,7 +114,7 @@ export const updateAdventure = async (id, data) => {
     data: {
       title: data.title ?? adventure.title,
       pageDescription: data.pageDescription ?? adventure.pageDescription,
-      bannerImage: data.bannerImage??adventure.bannerImage,
+      bannerImage: data.bannerImage ?? adventure.bannerImage,
       coverImage: data.coverImage ?? adventure.coverImage,
       description: data.description ?? adventure.description,
       name: data.name ?? adventure.name,

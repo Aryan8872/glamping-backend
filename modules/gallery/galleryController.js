@@ -27,7 +27,9 @@ export const updateGalleryController = asyncHandler(async (req, res) => {
   if (!slug) return res.status(400).json({ message: "slug is required" });
 
   const body = req.validated || req.body || {};
-
+  console.log("body", body);
+  console.log("files", req.files);
+  console.log("Content-Type:", req.headers["content-type"]);
   // Parse arrays sent from frontend
   const removedImages = body.removedImages
     ? JSON.parse(body.removedImages)

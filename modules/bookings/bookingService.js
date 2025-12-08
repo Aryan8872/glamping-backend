@@ -8,11 +8,42 @@ import { sendBookingConfirmationEmail } from "../../utils/email/emailService.js"
 
 // Create booking (handles guest or registered user)
 export const createBooking = async (validated) => {
+  // Fetch camp with active discounts
   const camp = await prisma.campSite.findUnique({
     where: { id: validated.campSiteId },
+    include: {
+      discounts: {
+        where: {
+          active: true,
+          startsAt: { lte: new Date() },
+          OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+        },
+        orderBy: { startsAt: "desc" },
+      },
+      adventures: {
+        select: { adventureId: true },
+      },
+    },
   });
 
   if (!camp) throw new NotFoundError("Campsite not found");
+
+  // Fetch active discounts for linked adventures
+  const adventureIds = camp.adventures.map((a) => a.adventureId);
+  const adventureDiscounts = await prisma.discount.findMany({
+    where: {
+      adventureId: { in: adventureIds },
+      active: true,
+      startsAt: { lte: new Date() },
+      OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+    },
+    orderBy: { startsAt: "desc" },
+  });
+
+  // Combine and sort discounts (Camp specific takes precedence or just most recent)
+  const allDiscounts = [...camp.discounts, ...adventureDiscounts].sort(
+    (a, b) => b.startsAt - a.startsAt
+  );
 
   // dates
   const checkIn = new Date(validated.checkInDate);
@@ -54,7 +85,20 @@ export const createBooking = async (validated) => {
   }
 
   const nights = calculateNights(checkIn, checkOut);
-  const totalPrice = Number(camp.pricePerNight) * nights; // ensure decimal handling as needed
+
+  // Calculate Price with Discount
+  let finalPricePerNight = Number(camp.pricePerNight);
+  if (allDiscounts && allDiscounts.length > 0) {
+    const d = allDiscounts[0];
+    if (d.type === "PERCENTAGE") {
+      finalPricePerNight =
+        finalPricePerNight - (finalPricePerNight * d.amount) / 100;
+    } else if (d.type === "FIXED") {
+      finalPricePerNight = finalPricePerNight - d.amount;
+    }
+  }
+
+  const totalPrice = Math.max(0, finalPricePerNight) * nights;
 
   // create booking inside transaction (future-proof)
   const booking = await prisma.$transaction(async (tx) => {

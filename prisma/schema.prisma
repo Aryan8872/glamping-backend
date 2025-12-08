@@ -64,6 +64,11 @@ model User {
   campBookings   CampBookings[]
   profilePicture String?
   campSite       CampSite[]
+
+  // Host Features
+  isFeatured        Boolean @default(false)
+  hostTagline       String? // e.g. "Managing 3 campsites"
+  yearsOfExperience Int? // e.g. 5
 }
 
 model Blog {
@@ -102,6 +107,11 @@ model CampSite {
   longitude          Float?
   adventures         CampSiteAdventure[]
   discounts          Discount[]
+
+  // New Relations
+  destinationId Int?
+  destination   Destination?         @relation(fields: [destinationId], references: [id])
+  experiences   CampSiteExperience[]
 
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
@@ -254,4 +264,46 @@ model Contact {
   email       String
   phoneNumber String
   address     String
+}
+
+// New Models
+
+model Destination {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  imageUrl    String?
+  isFeatured  Boolean @default(false) // For "Top Destinations"
+  isActive    Boolean @default(true)
+
+  campSites CampSite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Experience {
+  id          Int     @id @default(autoincrement())
+  title       String  @unique
+  slug        String  @unique
+  imageUrl    String? // URL of the uploaded image
+  description String?
+  isActive    Boolean @default(true)
+
+  campSites CampSiteExperience[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CampSiteExperience {
+  id           Int @id @default(autoincrement())
+  campId       Int
+  experienceId Int
+
+  campSite   CampSite   @relation(fields: [campId], references: [id], onDelete: Cascade)
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@unique([campId, experienceId])
 }

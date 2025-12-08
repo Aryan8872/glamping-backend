@@ -7,7 +7,14 @@ export const createAdventureSchema = z.object({
   pageDescription: z
     .string()
     .min(10, "Page description must be at least 10 characters"),
-  isActive: z.boolean().optional(),
+  slug: z.string().min(1, "Slug is required"),
+  coverImage: z.string().optional(),
+  bannerImage: z.string().optional(),
+  isActive: z.preprocess((val) => {
+    if (val === "true") return true;
+    if (val === "false") return false;
+    return val;
+  }, z.boolean().optional().default(true)),
 });
 
 export const updateAdventureSchema = createAdventureSchema.partial();

@@ -51,18 +51,15 @@ export const getActiveDiscountsService = async () => {
   });
 };
 
-export const getFeaturedDiscountsService = async () => {
+export const getFeaturedDiscountService = async () => {
   const now = new Date();
-  return await prisma.discount.findMany({
+  return await prisma.discount.findFirst({
     where: {
       isFeatured: true,
       active: true,
       startsAt: { lte: now },
       OR: [{ endsAt: null }, { endsAt: { gte: now } }],
     },
-    include: {
-      camp: { select: { name: true } },
-      adventure: { select: { name: true } },
-    },
+    orderBy: { startsAt: "desc" }, // Get the most recent one
   });
 };
