@@ -8,7 +8,12 @@ import {
 } from "./userService.js";
 
 export const createUserController = async (req, res) => {
-  const newuser = await createUserService(req.body);
+  const profilePicture = req.file
+    ? `/uploads/users/${req.file.filename}`
+    : null;
+  const payload = { ...req.body, ...(profilePicture && { profilePicture }) };
+
+  const newuser = await createUserService(payload);
   return res
     .status(201)
     .json({ message: "successfully created user", data: newuser });
@@ -16,10 +21,18 @@ export const createUserController = async (req, res) => {
 
 export const updateUserController = async (req, res) => {
   const userId = parseInt(req.params.userId);
-  const newuser = await updateUserService(userId, req.body);
+  const profilePicture = req.file
+    ? `/uploads/users/${req.file.filename}`
+    : undefined;
+
+  // Clean up undefined values from body if any, or handle in service
+  const payload = { ...req.body };
+  if (profilePicture) payload.profilePicture = profilePicture;
+
+  const newuser = await updateUserService(userId, payload);
   return res
     .status(201)
-    .json({ message: "successfully created user", data: newuser });
+    .json({ message: "successfully updated user", data: newuser });
 };
 
 export const getAllUserController = async (req, res) => {

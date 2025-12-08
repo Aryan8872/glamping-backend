@@ -77,6 +77,14 @@ export const createCampSite = async (data) => {
     connectHost = { connect: { id: user.id } };
   }
 
+  // Handle Featured Exclusivity
+  if (data.isFeatured) {
+    await prisma.campSite.updateMany({
+      where: { isFeatured: true },
+      data: { isFeatured: false },
+    });
+  }
+
   return await prisma.campSite.create({
     data: {
       name: data.name,
@@ -90,6 +98,10 @@ export const createCampSite = async (data) => {
       destination: data.destinationId
         ? { connect: { id: Number(data.destinationId) } }
         : undefined,
+      maxAdult: data.maxAdult,
+      maxChildren: data.maxChildren,
+      maxPets: data.maxPets,
+      isFeatured: data.isFeatured,
 
       ...(connectHost && { campHost: connectHost }),
 
@@ -305,12 +317,24 @@ export const updateCampSite = async (id, data) => {
     hostOperation = { disconnect: true };
   }
 
+  // Handle Featured Exclusivity
+  if (data.isFeatured) {
+    await prisma.campSite.updateMany({
+      where: { isFeatured: true, id: { not: id } },
+      data: { isFeatured: false },
+    });
+  }
+
   return await prisma.campSite.update({
     where: { id },
     data: {
       name: data.name ?? campsite.name,
       description: data.description ?? campsite.description,
       pricePerNight: data.pricePerNight ?? campsite.pricePerNight,
+      maxAdult: data.maxAdult ?? campsite.maxAdult,
+      maxChildren: data.maxChildren ?? campsite.maxChildren,
+      maxPets: data.maxPets ?? campsite.maxPets,
+      isFeatured: data.isFeatured ?? campsite.isFeatured,
       images: finalImages,
       campHost: hostOperation,
       location: data.location !== undefined ? data.location : campsite.location,
@@ -377,6 +401,7 @@ export const searchCamp = async ({
   experience, // slug or id
   destination, // slug or id
   sort = "relevance",
+  isFeatured,
 } = {}) => {
   const take = Number(perPage) || 12;
   const skip = (Number(page) - 1) * take;
@@ -436,6 +461,12 @@ export const searchCamp = async ({
   }
   if (petsN && petsN > 0) {
     filters.push(`cs."maxPets" >= ${petsN}`);
+  }
+
+  if (isFeatured !== undefined) {
+    filters.push(
+      `cs."isFeatured" = ${isFeatured === "true" || isFeatured === true}`
+    );
   }
 
   if (minPrice !== undefined && minPrice !== "") {

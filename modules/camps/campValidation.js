@@ -12,6 +12,12 @@ export const createCampSchema = z.object({
   adventureIds: z
     .union([z.array(z.coerce.number()), z.coerce.number()])
     .optional(),
+  maxAdult: z.coerce.number().optional().default(0),
+  maxChildren: z.coerce.number().optional().default(0),
+  maxPets: z.coerce.number().optional().default(0),
+  isFeatured: z
+    .preprocess((val) => val === "true" || val === true, z.boolean())
+    .optional(),
 });
 
 export const updateCampSchema = createCampSchema.partial().extend({

@@ -120,6 +120,7 @@ model CampSite {
   maxChildren   Int                     @default(0)
   maxPets       Int                     @default(0)
   search_vector Unsupported("tsvector") @default(dbgenerated())
+  isFeatured    Boolean                 @default(false)
 }
 
 model Facility {

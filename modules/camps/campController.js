@@ -22,6 +22,10 @@ export const createCampController = asyncHandler(async (req, res) => {
     facilities,
     adventureIds,
     newFacilities,
+    maxAdult: body.maxAdult ? Number(body.maxAdult) : 0,
+    maxChildren: body.maxChildren ? Number(body.maxChildren) : 0,
+    maxPets: body.maxPets ? Number(body.maxPets) : 0,
+    isFeatured: body.isFeatured === "true" || body.isFeatured === true,
   };
 
   const newCamp = await campService.createCampSite(payload);
@@ -102,6 +106,7 @@ export const searchCampsController = asyncHandler(async (req, res) => {
     sort: src.sort || "relevance",
     experience: src.experience,
     destination: src.destination,
+    isFeatured: src.isFeatured,
   };
 
   console.log("🎯 Controller received:", { src });
