@@ -1,5 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { removeFile } from "../../utils/uploads/storage.utils.js";
+import { safeDelete } from "../../storage/storageTransaction.js";
 
 // CREATE CAMPSITE
 export const createCampSite = async (data) => {
@@ -275,8 +276,9 @@ export const updateCampSite = async (id, data) => {
     }
   }
 
+  // Delete removed images from storage
   if (data.removedImages?.length) {
-    data.removedImages.forEach((img) => removeFile(img));
+    await safeDelete(data.removedImages);
   }
 
   let finalImages = campsite.images;
@@ -379,10 +381,56 @@ export const updateCampSite = async (id, data) => {
     },
   });
 };
-
+export const getFeaturedCampService = async () => {
+  return prisma.campSite.findMany({
+    where: { isFeatured: true },
+    include: {
+      campSiteFacilities: {
+        include: {
+          facility: {
+            select: {
+              id: true,
+              name: true,
+              icon: true,
+            },
+          },
+        },
+      },
+      campHost: {
+        select: {
+          id: true,
+          fullName: true,
+          profilePicture: true,
+          email: true,
+          phoneNumber: true,
+          userStatus: true,
+        },
+      },
+      adventures: { include: { adventure: true } },
+      experiences: { include: { experience: true } },
+      destination: true,
+    },
+  });
+};
 // DELETE CAMP
 export const deleteCampSite = async (id) => {
-  return prisma.campSite.delete({ where: { id } });
+  // Fetch camp to get image URLs before deletion
+  const camp = await prisma.campSite.findUnique({
+    where: { id },
+    select: { images: true },
+  });
+
+  // Delete from database
+  const result = await prisma.campSite.delete({ where: { id } });
+
+  // Delete associated images from storage (non-blocking)
+  if (camp?.images?.length) {
+    safeDelete(camp.images).catch((err) => {
+      console.error(`⚠️ Failed to delete images for camp ${id}:`, err);
+    });
+  }
+
+  return result;
 };
 
 // SEARCH CAMP

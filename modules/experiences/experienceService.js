@@ -1,5 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { NotFoundError, ConflictError } from "../../utils/error.js";
+import { safeDelete } from "../../storage/storageTransaction.js";
 
 export const getAllExperiences = async (includeInactive = false) => {
   const where = includeInactive ? {} : { isActive: true };
@@ -76,6 +77,17 @@ export const updateExperience = async (id, data) => {
       throw new ConflictError("Experience with this slug already exists");
     }
   }
+  // Delete old image if new one is provided
+  if (
+    data.imageUrl &&
+    experience.imageUrl &&
+    data.imageUrl !== experience.imageUrl
+  ) {
+    safeDelete(experience.imageUrl).catch((err) => {
+      console.error(`⚠️ Failed to delete old experience image:`, err);
+    });
+  }
+
   return await prisma.experience.update({
     where: { id: Number(id) },
     data,
@@ -85,11 +97,23 @@ export const updateExperience = async (id, data) => {
 export const deleteExperience = async (id) => {
   const experience = await prisma.experience.findUnique({
     where: { id: Number(id) },
+    select: { imageUrl: true },
   });
   if (!experience) {
     throw new NotFoundError("Experience not found");
   }
-  return await prisma.experience.delete({
+
+  // Delete from database
+  const result = await prisma.experience.delete({
     where: { id: Number(id) },
   });
+
+  // Delete associated image from storage (non-blocking)
+  if (experience.imageUrl) {
+    safeDelete(experience.imageUrl).catch((err) => {
+      console.error(`⚠️ Failed to delete image for experience ${id}:`, err);
+    });
+  }
+
+  return result;
 };

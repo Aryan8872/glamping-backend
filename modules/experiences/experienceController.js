@@ -3,7 +3,7 @@ import {
   createExperienceSchema,
   updateExperienceSchema,
 } from "./experienceValidation.js";
-import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
+import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 
 export const getAllExperiencesController = async (req, res) => {
   const includeInactive = req.query.includeInactive === "true";
@@ -20,9 +20,10 @@ export const getExperienceByIdController = async (req, res) => {
 };
 
 export const createExperienceController = async (req, res) => {
-  const imagePaths = req.files?.imageUrl
-    ? mapFilesToPaths(req.files.imageUrl)
-    : [];
+  const imagePath = await processSingleFile(
+    req.files?.imageUrl?.[0],
+    "experience"
+  );
 
   const slug = req.body.title
     .toLowerCase()
@@ -48,7 +49,7 @@ export const createExperienceController = async (req, res) => {
 
   const payload = {
     ...validatedData.data,
-    imageUrl: imagePaths[0] || null,
+    imageUrl: imagePath || null,
   };
 
   const experience = await experienceService.createExperience(payload);
@@ -59,9 +60,10 @@ export const createExperienceController = async (req, res) => {
 
 export const updateExperienceController = async (req, res) => {
   const { id } = req.params;
-  const imagePaths = req.files?.imageUrl
-    ? mapFilesToPaths(req.files.imageUrl)
-    : null;
+  const imagePath = await processSingleFile(
+    req.files?.imageUrl?.[0],
+    "experience"
+  );
 
   const rawData = { ...req.body };
   if (req.body.isActive !== undefined) {
@@ -80,7 +82,7 @@ export const updateExperienceController = async (req, res) => {
 
   const payload = {
     ...validatedData.data,
-    ...(imagePaths ? { imageUrl: imagePaths[0] } : {}),
+    ...(imagePath ? { imageUrl: imagePath } : {}),
   };
 
   const experience = await experienceService.updateExperience(id, payload);

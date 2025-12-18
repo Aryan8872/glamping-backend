@@ -8,6 +8,8 @@ import {
   toPublicPath,
 } from "./storage.utils.js";
 
+const STORAGE_DRIVER = process.env.STORAGE_DRIVER || "local";
+
 /**
  * createMulter: factory to create a multer instance configured for a module.
  *
@@ -18,24 +20,38 @@ import {
 export default function createMulter(moduleName, options = {}) {
   if (!moduleName) throw new Error("moduleName is required for createMulter");
 
-  const uploadPath = getUploadPath(moduleName);
-  ensureFolderExists(uploadPath);
+  let storage;
 
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      // destination can be dynamic based on request if needed
-      cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-      // option to preserve original name (not recommended for collisions)
-      if (options.preserveOriginalName) {
-        const safe = file.originalname.replace(/\s+/g, "_");
-        cb(null, `${Date.now()}_${safe}`);
-        return;
-      }
-      cb(null, generateFileName(file.originalname));
-    },
-  });
+  // Use memoryStorage for Supabase (files uploaded from buffer)
+  // Use diskStorage for local (files saved to disk)
+  if (STORAGE_DRIVER === "supabase") {
+    console.log(
+      `📦 Multer configured for Supabase (memoryStorage) - module: ${moduleName}`
+    );
+    storage = multer.memoryStorage();
+  } else {
+    console.log(
+      `📦 Multer configured for local (diskStorage) - module: ${moduleName}`
+    );
+    const uploadPath = getUploadPath(moduleName);
+    ensureFolderExists(uploadPath);
+
+    storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        // destination can be dynamic based on request if needed
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        // option to preserve original name (not recommended for collisions)
+        if (options.preserveOriginalName) {
+          const safe = file.originalname.replace(/\s+/g, "_");
+          cb(null, `${Date.now()}_${safe}`);
+          return;
+        }
+        cb(null, generateFileName(file.originalname));
+      },
+    });
+  }
 
   const allowedTypes = options.allowedTypes || [
     "image/jpeg",
@@ -47,7 +63,10 @@ export default function createMulter(moduleName, options = {}) {
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      const err = new multer.MulterError("LIMIT_UNEXPECTED_FILE", file.fieldname);
+      const err = new multer.MulterError(
+        "LIMIT_UNEXPECTED_FILE",
+        file.fieldname
+      );
       err.message = `Invalid file type: ${file.mimetype}`;
       cb(err, false);
     }

@@ -4,7 +4,7 @@ import {
   updateAdventureSchema,
 } from "./adventureValidation.js";
 import { assignAdventureSchema } from "../../validation/adventureSchema.js";
-import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
+import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 import { ConflictError } from "../../utils/error.js";
 export const getAllAdventuresController = async (req, res) => {
   const includeInactive = req.query.includeInactive === "true";
@@ -22,12 +22,14 @@ export const getAdventureBySlugController = async (req, res) => {
   res.json({ data: adventure });
 };
 export const createAdventureController = async (req, res) => {
-  const coverImagePaths = req.files?.adventureCoverImage
-    ? mapFilesToPaths(req.files.adventureCoverImage)
-    : [];
-  const bannerImagePaths = req.files?.adventureBannerImage
-    ? mapFilesToPaths(req.files.adventureBannerImage)
-    : [];
+  const coverImagePath = await processSingleFile(
+    req.files?.adventureCoverImage?.[0],
+    "adventure"
+  );
+  const bannerImagePath = await processSingleFile(
+    req.files?.adventureBannerImage?.[0],
+    "adventure"
+  );
 
   const slug = req.body.name
     .toLowerCase()
@@ -39,8 +41,9 @@ export const createAdventureController = async (req, res) => {
   const rawData = {
     ...req.body,
     slug,
-    coverImage: coverImagePaths[0] || "",
-    bannerImage: bannerImagePaths[0] || "",
+    slug,
+    coverImage: coverImagePath || "",
+    bannerImage: bannerImagePath || "",
   };
   const validatedData = createAdventureSchema.safeParse(rawData);
 
@@ -66,12 +69,15 @@ export const updateAdventureController = async (req, res) => {
   console.log("update data at controller", req.body);
   const id = parseInt(req.params.id);
   console.log("files", req.files);
-  const coverImage = req.files?.adventureCoverImage
-    ? mapFilesToPaths(req.files?.adventureCoverImage)
-    : null;
-  const bannerImage = req.files?.adventureBannerImage
-    ? mapFilesToPaths(req.files?.adventureBannerImage)
-    : null;
+
+  const coverImage = await processSingleFile(
+    req.files?.adventureCoverImage?.[0],
+    "adventure"
+  );
+  const bannerImage = await processSingleFile(
+    req.files?.adventureBannerImage?.[0],
+    "adventure"
+  );
   data["isActive"] = JSON.parse(data["isActive"]);
   const validatedData = updateAdventureSchema.safeParse(data);
   if (!validatedData.success) {
@@ -83,8 +89,8 @@ export const updateAdventureController = async (req, res) => {
   const parsedData = validatedData.data;
   const payload = {
     ...parsedData,
-    coverImage: coverImage ? coverImage[0] : null,
-    bannerImage: bannerImage ? bannerImage[0] : null,
+    coverImage: coverImage || null,
+    bannerImage: bannerImage || null,
   };
   const adventure = await adventureService.updateAdventure(id, payload);
   res.json({ data: adventure, message: "Adventure updated successfully" });

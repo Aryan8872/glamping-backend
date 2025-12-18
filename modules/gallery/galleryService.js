@@ -1,6 +1,7 @@
 import prisma from "../../utils/prismaClient.js";
 import { GalleryStatus } from "../../utils/types.js";
 import { removeFile } from "../../utils/uploads/storage.utils.js";
+import { safeDelete } from "../../storage/storageTransaction.js";
 
 /**
  * Create a gallery record
@@ -41,7 +42,7 @@ export const updateGalleryService = async (slug, updateData) => {
 
   // Remove images marked for deletion
   if (updateData.removedImages && Array.isArray(updateData.removedImages)) {
-    updateData.removedImages.forEach((img) => removeFile(img));
+    await safeDelete(updateData.removedImages);
   }
 
   // Merge existing images with newly uploaded ones
@@ -55,7 +56,7 @@ export const updateGalleryService = async (slug, updateData) => {
   // Handle cover image replacement
   let finalCoverImage = exists.coverImage;
   if (updateData.coverImage) {
-    if (exists.coverImage) removeFile(exists.coverImage);
+    if (exists.coverImage) await safeDelete(exists.coverImage);
     finalCoverImage = updateData.coverImage;
   }
 
@@ -127,8 +128,28 @@ export const updateGalleryStatusService = async (slug, status) => {
 };
 
 export const deleteGalleryService = async (id) => {
-  return await prisma.gallery.update({
-    where: { id: id },
+  // Fetch gallery to get image URLs before deletion
+  const gallery = await prisma.gallery.findUnique({
+    where: { id },
+    select: { images: true, coverImage: true },
+  });
+
+  // Soft delete in database
+  const result = await prisma.gallery.update({
+    where: { id },
     data: { galleryStatus: "DELETED" },
   });
+
+  // Delete associated images from storage (non-blocking)
+  const imagesToDelete = [];
+  if (gallery?.images?.length) imagesToDelete.push(...gallery.images);
+  if (gallery?.coverImage) imagesToDelete.push(gallery.coverImage);
+
+  if (imagesToDelete.length) {
+    safeDelete(imagesToDelete).catch((err) => {
+      console.error(`⚠️ Failed to delete images for gallery ${id}:`, err);
+    });
+  }
+
+  return result;
 };

@@ -1,16 +1,22 @@
 import * as galleryService from "./galleryService.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
+import {
+  processUploadedFiles,
+  processSingleFile,
+} from "../../utils/uploads/uploadAdapter.js";
 
 export const createGalleryController = asyncHandler(async (req, res) => {
   const body = req.validated || req.body || {};
 
-  const coverImage = req.files?.coverImage?.[0]
-    ? mapFilesToPaths([req.files.coverImage[0]])[0]
-    : null;
-  const galleryImages = req.files?.galleryImage
-    ? mapFilesToPaths(req.files.galleryImage)
-    : [];
+  const coverImage = await processSingleFile(
+    req.files?.coverImage?.[0],
+    "gallery"
+  );
+
+  const galleryImages = await processUploadedFiles(
+    req.files?.galleryImage,
+    "gallery"
+  );
 
   const payload = {
     ...body,
@@ -36,12 +42,14 @@ export const updateGalleryController = asyncHandler(async (req, res) => {
     : [];
   const existingImages = body.images ? JSON.parse(body.images) : [];
 
-  const newImages = req.files?.galleryImage
-    ? mapFilesToPaths(req.files.galleryImage)
-    : [];
-  const coverImage = req.files?.coverImage?.[0]
-    ? mapFilesToPaths([req.files.coverImage[0]])[0]
-    : null;
+  const newImages = await processUploadedFiles(
+    req.files?.galleryImage,
+    "gallery"
+  );
+  const coverImage = await processSingleFile(
+    req.files?.coverImage?.[0],
+    "gallery"
+  );
 
   const updatePayload = {
     ...body,

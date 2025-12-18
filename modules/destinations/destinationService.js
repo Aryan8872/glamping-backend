@@ -1,5 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { NotFoundError, ConflictError } from "../../utils/error.js";
+import { safeDelete } from "../../storage/storageTransaction.js";
 
 export const getAllDestinations = async (includeInactive = false) => {
   const where = includeInactive ? {} : { isActive: true };
@@ -55,6 +56,17 @@ export const updateDestination = async (id, data) => {
       throw new ConflictError("Destination with this slug already exists");
     }
   }
+  // Delete old image if new one is provided
+  if (
+    data.imageUrl &&
+    destination.imageUrl &&
+    data.imageUrl !== destination.imageUrl
+  ) {
+    safeDelete(destination.imageUrl).catch((err) => {
+      console.error(`⚠️ Failed to delete old destination image:`, err);
+    });
+  }
+
   return await prisma.destination.update({
     where: { id: Number(id) },
     data,
@@ -64,11 +76,23 @@ export const updateDestination = async (id, data) => {
 export const deleteDestination = async (id) => {
   const destination = await prisma.destination.findUnique({
     where: { id: Number(id) },
+    select: { imageUrl: true },
   });
   if (!destination) {
     throw new NotFoundError("Destination not found");
   }
-  return await prisma.destination.delete({
+
+  // Delete from database
+  const result = await prisma.destination.delete({
     where: { id: Number(id) },
   });
+
+  // Delete associated image from storage (non-blocking)
+  if (destination.imageUrl) {
+    safeDelete(destination.imageUrl).catch((err) => {
+      console.error(`⚠️ Failed to delete image for destination ${id}:`, err);
+    });
+  }
+
+  return result;
 };

@@ -6,11 +6,10 @@ import {
   getCampHostUsers,
   getFeaturedHosts,
 } from "./userService.js";
+import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 
 export const createUserController = async (req, res) => {
-  const profilePicture = req.file
-    ? `/uploads/users/${req.file.filename}`
-    : null;
+  const profilePicture = await processSingleFile(req.file, "user");
 
   const payload = {
     ...req.body,
@@ -29,9 +28,7 @@ export const createUserController = async (req, res) => {
 
 export const updateUserController = async (req, res) => {
   const userId = parseInt(req.params.userId);
-  const profilePicture = req.file
-    ? `/uploads/users/${req.file.filename}`
-    : undefined;
+  const profilePicture = await processSingleFile(req.file, "user");
 
   // Clean up undefined values from body if any, or handle in service
   const payload = {

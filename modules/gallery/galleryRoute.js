@@ -17,7 +17,7 @@ import createMulter from "../../utils/uploads/multerFactory.js";
 const galleryRoute = Router();
 const upload = createMulter("gallery", {
   allowedTypes: ["image/jpeg", "image/png", "image/webp"],
-  maxSizeBytes: 5 * 1024 * 1024,
+  maxSizeBytes: 20 * 1024 * 1024,
 });
 
 galleryRoute.post(

@@ -1,5 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { NotFoundError, ConflictError } from "../../utils/error.js";
+import { safeDelete } from "../../storage/storageTransaction.js";
 export const getAllAdventures = async (includeInactive = false) => {
   const where = includeInactive ? {} : { isActive: true };
 
@@ -109,6 +110,29 @@ export const updateAdventure = async (id, data) => {
       throw new ConflictError("Adventure with this slug already exists");
     }
   }
+  // Delete old images if new ones are provided
+  const imagesToDelete = [];
+  if (
+    data.bannerImage &&
+    adventure.bannerImage &&
+    data.bannerImage !== adventure.bannerImage
+  ) {
+    imagesToDelete.push(adventure.bannerImage);
+  }
+  if (
+    data.coverImage &&
+    adventure.coverImage &&
+    data.coverImage !== adventure.coverImage
+  ) {
+    imagesToDelete.push(adventure.coverImage);
+  }
+
+  if (imagesToDelete.length) {
+    safeDelete(imagesToDelete).catch((err) => {
+      console.error(`⚠️ Failed to delete old adventure images:`, err);
+    });
+  }
+
   return await prisma.adventure.update({
     where: { id: Number(id) },
     data: {
@@ -126,13 +150,29 @@ export const updateAdventure = async (id, data) => {
 export const deleteAdventure = async (id) => {
   const adventure = await prisma.adventure.findUnique({
     where: { id: Number(id) },
+    select: { bannerImage: true, coverImage: true },
   });
   if (!adventure) {
     throw new NotFoundError("Adventure not found");
   }
-  return await prisma.adventure.delete({
+
+  // Delete from database
+  const result = await prisma.adventure.delete({
     where: { id: Number(id) },
   });
+
+  // Delete associated images from storage (non-blocking)
+  const imagesToDelete = [];
+  if (adventure.bannerImage) imagesToDelete.push(adventure.bannerImage);
+  if (adventure.coverImage) imagesToDelete.push(adventure.coverImage);
+
+  if (imagesToDelete.length) {
+    safeDelete(imagesToDelete).catch((err) => {
+      console.error(`⚠️ Failed to delete images for adventure ${id}:`, err);
+    });
+  }
+
+  return result;
 };
 export const assignAdventuresToCamp = async (campId, adventureIds) => {
   // Verify camp exists

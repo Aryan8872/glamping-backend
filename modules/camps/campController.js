@@ -1,6 +1,6 @@
 import * as campService from "./campService.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { mapFilesToPaths } from "../../utils/uploads/mapFiles.js";
+import { processUploadedFiles } from "../../utils/uploads/uploadAdapter.js";
 import { getCache, setCache } from "../../utils/cache.js";
 import { makeSearchCacheKey } from "../../utils/cacheKey.js";
 import { safeParseArray } from "../../utils/safeParseArray.js";
@@ -8,7 +8,7 @@ import { safeParseArray } from "../../utils/safeParseArray.js";
 export const createCampController = asyncHandler(async (req, res) => {
   const body = req.validated || req.body || {};
   const campImages = req.files?.campImages
-    ? mapFilesToPaths(req.files?.campImages)
+    ? await processUploadedFiles(req.files.campImages, "camp")
     : [];
 
   const facilities = safeParseArray(body.facilities);
@@ -58,7 +58,7 @@ export const updateCampController = asyncHandler(async (req, res) => {
   const images = safeParseArray(body.images);
   const newFacilities = safeParseArray(body.newFacilities);
   const newImages = req.files?.campImages
-    ? mapFilesToPaths(req.files.campImages)
+    ? await processUploadedFiles(req.files.campImages, "camp")
     : [];
 
   const facilities = safeParseArray(body.facilities);
