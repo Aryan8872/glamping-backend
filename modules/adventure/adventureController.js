@@ -7,9 +7,23 @@ import { assignAdventureSchema } from "../../validation/adventureSchema.js";
 import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 import { ConflictError } from "../../utils/error.js";
 export const getAllAdventuresController = async (req, res) => {
-  const includeInactive = req.query.includeInactive === "true";
-  const adventures = await adventureService.getAllAdventures(includeInactive);
-  res.json({ data: adventures });
+  const { q, page, limit, isActive } = req.query;
+  const result = await adventureService.searchAdventures({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    isActive,
+  });
+
+  res.json({
+    message: "Adventures fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
 };
 export const getAdventureByIdController = async (req, res) => {
   const { id } = req.params;
@@ -24,11 +38,11 @@ export const getAdventureBySlugController = async (req, res) => {
 export const createAdventureController = async (req, res) => {
   const coverImagePath = await processSingleFile(
     req.files?.adventureCoverImage?.[0],
-    "adventure"
+    "adventure",
   );
   const bannerImagePath = await processSingleFile(
     req.files?.adventureBannerImage?.[0],
-    "adventure"
+    "adventure",
   );
 
   const slug = req.body.name
@@ -72,11 +86,11 @@ export const updateAdventureController = async (req, res) => {
 
   const coverImage = await processSingleFile(
     req.files?.adventureCoverImage?.[0],
-    "adventure"
+    "adventure",
   );
   const bannerImage = await processSingleFile(
     req.files?.adventureBannerImage?.[0],
-    "adventure"
+    "adventure",
   );
   data["isActive"] = JSON.parse(data["isActive"]);
   const validatedData = updateAdventureSchema.safeParse(data);
@@ -106,7 +120,7 @@ export const assignAdventuresToCampController = async (req, res) => {
   const { adventureIds } = assignAdventureSchema.parse(req.body);
   const camp = await adventureService.assignAdventuresToCamp(
     campId,
-    adventureIds
+    adventureIds,
   );
   res.json({ data: camp, message: "Adventures assigned successfully" });
 };

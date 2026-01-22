@@ -1,5 +1,5 @@
 import prisma from "../../utils/prismaClient.js";
-import { removeFile } from "../../utils/uploads/storage.utils.js";
+
 import { safeDelete } from "../../storage/storageTransaction.js";
 
 // CREATE CAMPSITE
@@ -94,8 +94,14 @@ export const createCampSite = async (data) => {
       slug,
       images: data.images || [],
       location: data.location ?? null,
-      latitude: parseInt(data.latitude) ?? null,
-      longitude: parseInt(data.longitude) ?? null,
+      latitude:
+        data.latitude !== null && data.latitude !== undefined
+          ? parseFloat(data.latitude)
+          : null,
+      longitude:
+        data.longitude !== null && data.longitude !== undefined
+          ? parseFloat(data.longitude)
+          : null,
       destination: data.destinationId
         ? { connect: { id: Number(data.destinationId) } }
         : undefined,
@@ -208,7 +214,7 @@ export const getCampSiteById = async (id) => {
 
   // 2️⃣ Merge and pick the best discount
   const allDiscounts = [...camp.discounts, ...adventureDiscounts].sort(
-    (a, b) => b.startsAt - a.startsAt
+    (a, b) => b.startsAt - a.startsAt,
   );
 
   // Calculate Discount
@@ -309,14 +315,16 @@ export const updateCampSite = async (id, data) => {
 
   // Handle Host Assignment
   let hostOperation = undefined;
-  if (data.hostId) {
-    const user = await prisma.user.findUnique({ where: { id: data.hostId } });
-    if (!user) throw new Error("Host user not found");
-    if (user.userType !== "CAMPHOST")
-      throw new Error("Assigned user is not a CampHost");
-    hostOperation = { connect: { id: user.id } };
-  } else {
-    hostOperation = { disconnect: true };
+  if (data.hostId !== undefined) {
+    if (data.hostId) {
+      const user = await prisma.user.findUnique({ where: { id: data.hostId } });
+      if (!user) throw new Error("Host user not found");
+      if (user.userType !== "CAMPHOST")
+        throw new Error("Assigned user is not a CampHost");
+      hostOperation = { connect: { id: user.id } };
+    } else {
+      hostOperation = { disconnect: true };
+    }
   }
 
   // Handle Featured Exclusivity
@@ -327,31 +335,44 @@ export const updateCampSite = async (id, data) => {
     });
   }
 
+  const updateData = {
+    name: data.name ?? campsite.name,
+    description: data.description ?? campsite.description,
+    pricePerNight: data.pricePerNight ?? campsite.pricePerNight,
+    maxAdult: data.maxAdult ?? campsite.maxAdult,
+    maxChildren: data.maxChildren ?? campsite.maxChildren,
+    maxPets: data.maxPets ?? campsite.maxPets,
+    isFeatured: data.isFeatured ?? campsite.isFeatured,
+    images: finalImages,
+    location: data.location !== undefined ? data.location : campsite.location,
+    latitude:
+      data.latitude !== undefined
+        ? data.latitude !== null
+          ? parseFloat(data.latitude)
+          : null
+        : campsite.latitude,
+    longitude:
+      data.longitude !== undefined
+        ? data.longitude !== null
+          ? parseFloat(data.longitude)
+          : null
+        : campsite.longitude,
+  };
+
+  if (hostOperation) {
+    updateData.campHost = hostOperation;
+  }
+
+  if (data.destinationId !== undefined) {
+    updateData.destination = data.destinationId
+      ? { connect: { id: Number(data.destinationId) } }
+      : { disconnect: true };
+  }
+
   return await prisma.campSite.update({
     where: { id },
     data: {
-      name: data.name ?? campsite.name,
-      description: data.description ?? campsite.description,
-      pricePerNight: data.pricePerNight ?? campsite.pricePerNight,
-      maxAdult: data.maxAdult ?? campsite.maxAdult,
-      maxChildren: data.maxChildren ?? campsite.maxChildren,
-      maxPets: data.maxPets ?? campsite.maxPets,
-      isFeatured: data.isFeatured ?? campsite.isFeatured,
-      images: finalImages,
-      campHost: hostOperation,
-      location: data.location !== undefined ? data.location : campsite.location,
-      destination: data.destinationId
-        ? { connect: { id: Number(data.destinationId) } }
-        : { disconnect: true },
-      latitude:
-        data.latitude !== undefined
-          ? parseInt(data.latitude)
-          : campsite.latitude,
-      longitude:
-        data.longitude !== undefined
-          ? parseInt(data.longitude)
-          : campsite.longitude,
-
+      ...updateData,
       campSiteFacilities: {
         deleteMany: { campId: id },
         create: [
@@ -439,7 +460,7 @@ export const searchCamp = async ({
   page = 1,
   perPage = 12,
   children = 0,
-  adults = 1,
+  adults = 0,
   pets = 0,
   minPrice,
   maxPrice,
@@ -450,257 +471,255 @@ export const searchCamp = async ({
   destination, // slug or id
   sort = "relevance",
   isFeatured,
+  ignoreAvailability = false,
 } = {}) => {
-  const take = Number(perPage) || 12;
-  const skip = (Number(page) - 1) * take;
+  const take = Math.max(1, Number(perPage) || 12);
+  const skip = (Math.max(1, Number(page)) - 1) * take;
 
   const adultsN = Math.max(0, Number(adults));
   const childrenN = Math.max(0, Number(children));
   const petsN = Math.max(0, Number(pets));
 
-  // 1️⃣ Find conflicting bookings
-  let conflictIds = [];
-  if (checkIn && checkOut) {
-    const chkIn = new Date(checkIn);
-    const chkOut = new Date(checkOut);
+  const values = [];
+  let paramIndex = 1;
 
-    if (isNaN(chkIn.getTime()) || isNaN(chkOut.getTime())) {
-      throw new Error("Invalid checkIn/checkOut dates");
-    }
+  const getParam = (val) => {
+    values.push(val);
+    return `$${paramIndex++}`;
+  };
 
-    const booked = await prisma.campBookings.findMany({
-      where: {
-        checkInDate: { lt: chkOut },
-        checkOutDate: { gt: chkIn },
-        bookingStatus: { not: "CANCELED" },
-      },
-      select: { campSiteId: true },
-    });
-
-    conflictIds = [...new Set(booked.map((b) => b.campSiteId).filter(Boolean))];
+  const filters = [];
+  if (!ignoreAvailability) {
+    filters.push(`cs."isAvailable" = true`);
   }
 
-  // 2️⃣ Facility filter
-  const facilityNums = (facilityIds || [])
-    .map(Number)
-    .filter((n) => Number.isFinite(n));
-  let facilityJoin = "";
-  let facilityHaving = "";
+  // Capacity filters
+  if (adultsN > 0) filters.push(`cs."maxAdult" >= ${getParam(adultsN)}`);
+  if (childrenN > 0) filters.push(`cs."maxChildren" >= ${getParam(childrenN)}`);
+  if (petsN > 0) filters.push(`cs."maxPets" >= ${getParam(petsN)}`);
 
-  if (facilityNums.length) {
-    const csv = facilityNums.join(",");
-    facilityJoin = `JOIN "CampSiteFacility" csf ON csf."campId" = cs."id"`;
-    facilityHaving = `
-      GROUP BY cs."id", d.amount, d.type, d.name, dest.name 
-      HAVING COUNT(DISTINCT csf."facilityId") = ${facilityNums.length}
-        AND bool_and(csf."facilityId" = ANY(ARRAY[${csv}]::int[]))
-    `;
-  }
-
-  // 3️⃣ Filters (Price, Capacity, Experience, Destination)
-  const filters = [`cs."isAvailable" = true`];
-
-  // Only apply capacity filters if values are explicitly provided
-  if (adultsN && adultsN > 0) {
-    filters.push(`cs."maxAdult" >= ${adultsN}`);
-  }
-  if (childrenN && childrenN > 0) {
-    filters.push(`cs."maxChildren" >= ${childrenN}`);
-  }
-  if (petsN && petsN > 0) {
-    filters.push(`cs."maxPets" >= ${petsN}`);
-  }
-
+  // Featured
   if (isFeatured !== undefined) {
     filters.push(
-      `cs."isFeatured" = ${isFeatured === "true" || isFeatured === true}`
+      `cs."isFeatured" = ${getParam(isFeatured === "true" || isFeatured === true)}`,
     );
   }
 
+  // Price filters
   if (minPrice !== undefined && minPrice !== "") {
-    filters.push(`cs."pricePerNight" >= ${Number(minPrice)}`);
+    filters.push(`cs."pricePerNight" >= ${getParam(Number(minPrice))}`);
   }
   if (maxPrice !== undefined && maxPrice !== "") {
-    filters.push(`cs."pricePerNight" <= ${Number(maxPrice)}`);
+    filters.push(`cs."pricePerNight" <= ${getParam(Number(maxPrice))}`);
   }
 
-  // Destination Filtering (by ID or Slug or direct location match)
-  let destJoin = `LEFT JOIN "Destination" dest ON dest.id = cs."destinationId"`;
+  // Destination Filtering
   if (destination) {
-    // If destination is potentially an ID or slug
     if (Number.isFinite(Number(destination))) {
-      filters.push(`cs."destinationId" = ${Number(destination)}`);
+      filters.push(`cs."destinationId" = ${getParam(Number(destination))}`);
     } else {
-      filters.push(
-        `(dest.slug = '${destination}' OR cs."location" ILIKE '%${destination}%')`
-      );
+      filters.push(`EXISTS (
+        SELECT 1 FROM "Destination" d 
+        WHERE d.id = cs."destinationId" 
+        AND (d.slug = ${getParam(destination)} OR cs."location" ILIKE ${getParam(
+          `%${destination}%`,
+        )})
+      )`);
     }
   }
 
-  // Experience Filtering - Use WHERE EXISTS to avoid JOIN conflicts
-  let expJoin = `LEFT JOIN "CampSiteExperience" csexp ON csexp."campId" = cs.id
-                 LEFT JOIN "Experience" exp ON exp.id = csexp."experienceId"`;
-
+  // Experience Filtering
   if (experience) {
-    // Use WHERE EXISTS subquery for proper filtering without affecting other JOINs
     if (Number.isFinite(Number(experience))) {
       filters.push(`EXISTS (
         SELECT 1 FROM "CampSiteExperience" cse 
-        WHERE cse."campId" = cs.id AND cse."experienceId" = ${Number(
-          experience
+        WHERE cse."campId" = cs.id AND cse."experienceId" = ${getParam(
+          Number(experience),
         )}
       )`);
     } else {
-      // Filter by slug using EXISTS
       filters.push(`EXISTS (
         SELECT 1 FROM "CampSiteExperience" cse 
         INNER JOIN "Experience" e ON e.id = cse."experienceId"
-        WHERE cse."campId" = cs.id AND e.slug = '${experience}'
+        WHERE cse."campId" = cs.id AND e.slug = ${getParam(experience)}
       )`);
     }
   }
 
-  const whereClause = filters.length ? "AND " + filters.join(" AND ") : "";
-  const conflictClause = conflictIds.length
-    ? `AND cs."id" NOT IN (${conflictIds.join(",")})`
-    : "";
+  // Availability check removed from WHERE clause to allow marking camps as fully booked instead of hiding them
 
-  // Debug logging
-  console.log("🔍 Search Filters:", {
-    experience,
-    destination,
-    q,
-    filters,
-    whereClause,
-  });
+  // Facility Filter (All must match)
+  const facilityNums = (facilityIds || [])
+    .map(Number)
+    .filter((n) => Number.isFinite(n));
+  if (facilityNums.length) {
+    filters.push(`(
+      SELECT COUNT(DISTINCT csf."facilityId") 
+      FROM "CampSiteFacility" csf 
+      WHERE csf."campId" = cs.id 
+      AND csf."facilityId" = ANY(${getParam(facilityNums)})
+    ) = ${facilityNums.length}`);
+  }
 
-  // 4️⃣ Search Term
-  const searchTerm = q ? q.trim().replace(/\s+/g, " & ") + ":*" : null;
+  // Text search
+  let textSearchClause = "";
+  let textRankSelect = "";
+  if (q && q.trim()) {
+    const searchTerm = q.trim().replace(/\s+/g, " & ") + ":*";
+    const tsParam = getParam(searchTerm);
 
-  // 5️⃣ SQL Query
+    textSearchClause = `AND (
+      cs."search_vector" @@ to_tsquery(${tsParam})
+      OR cs."location" ILIKE ${getParam(`%${q}%`)}
+      OR EXISTS (
+        SELECT 1 FROM "Destination" d 
+        WHERE d.id = cs."destinationId" AND d.name ILIKE ${getParam(`%${q}%`)}
+      )
+    )`;
+    textRankSelect = `, ts_rank(cs."search_vector", to_tsquery(${tsParam})) as rank`;
+  }
+
+  const whereClause = filters.length ? "WHERE " + filters.join(" AND ") : "";
+
+  // Order By
+  let orderBy = `ORDER BY cs."createdAt" DESC`;
+  if (sort === "price_asc") orderBy = `ORDER BY cs."pricePerNight" ASC`;
+  else if (sort === "price_desc") orderBy = `ORDER BY cs."pricePerNight" DESC`;
+  else if (q && q.trim()) orderBy = `ORDER BY rank DESC`;
+
   const sql = `
-    SELECT DISTINCT
+    WITH filtered_camps AS (
+      SELECT 
+        cs.id ${textRankSelect}
+      FROM "CampSite" cs
+      ${whereClause}
+      ${textSearchClause}
+      ${orderBy}
+      LIMIT ${getParam(take)} OFFSET ${getParam(skip)}
+    )
+    SELECT 
       cs.id, cs.name, cs.description, cs."pricePerNight",
       cs."maxAdult", cs."maxChildren", cs."maxPets", cs."isAvailable",
       cs.images, cs."hostId", cs."location", cs."latitude", cs."longitude",
       cs."createdAt", cs."updatedAt",
-      -- Discount
       d.amount AS "discountAmount",
       d.type AS "discountType",
       d.name AS "discountName",
-      -- Destination
       dest.name AS "destinationName"
-      ${
-        searchTerm
-          ? `, ts_rank(cs."search_vector", to_tsquery('${searchTerm}')) as rank`
-          : ""
-      }
-    FROM "CampSite" cs
-    ${facilityJoin}
-    ${destJoin}
-    ${expJoin}
-    -- Join active discounts
-    LEFT JOIN "CampSiteAdventure" csa ON csa."campId" = cs.id
-    LEFT JOIN "Discount" d ON (d."campId" = cs.id OR d."adventureId" = csa."adventureId")
-      AND d.active = true 
-      AND d."startsAt" <= NOW() 
-      AND (d."endsAt" IS NULL OR d."endsAt" >= NOW())
-    WHERE 1=1
-      ${
-        searchTerm
-          ? `AND (
-              cs."search_vector" @@ to_tsquery('${searchTerm}')
-              OR cs."location" ILIKE '%${q}%'
-              OR dest."name" ILIKE '%${q}%'
-             )`
-          : ""
-      }
-      ${whereClause}
-      ${conflictClause}
-    ${facilityHaving}
-    ${
-      sort === "price_asc"
-        ? `ORDER BY cs."pricePerNight" ASC`
-        : sort === "price_desc"
-        ? `ORDER BY cs."pricePerNight" DESC`
-        : searchTerm
-        ? `ORDER BY ts_rank(cs."search_vector", to_tsquery('${searchTerm}')) DESC`
-        : `ORDER BY cs."createdAt" DESC`
-    }
-    OFFSET ${skip} LIMIT ${take};
+      ${textRankSelect ? ", fc.rank" : ""}
+    FROM filtered_camps fc
+    JOIN "CampSite" cs ON cs.id = fc.id
+    LEFT JOIN "Destination" dest ON dest.id = cs."destinationId"
+    LEFT JOIN LATERAL (
+      SELECT sub_d.amount, sub_d.type, sub_d.name
+      FROM "Discount" sub_d
+      LEFT JOIN "CampSiteAdventure" csa ON csa."adventureId" = sub_d."adventureId"
+      WHERE (sub_d."campId" = cs.id OR csa."campId" = cs.id)
+        AND sub_d.active = true
+        AND sub_d."startsAt" <= NOW()
+        AND (sub_d."endsAt" IS NULL OR sub_d."endsAt" >= NOW())
+      ORDER BY sub_d."startsAt" DESC
+      LIMIT 1
+    ) d ON true
+    ${orderBy.replace(/rank/g, "fc.rank")}
   `;
 
-  // Count Query
+  // Count SQL
   const countSql = `
-    SELECT COUNT(DISTINCT cs."id") as total
+    SELECT COUNT(*) as total
     FROM "CampSite" cs
-    ${facilityJoin}
-    ${destJoin}
-    ${expJoin}
-    WHERE 1=1
-      ${
-        searchTerm
-          ? `AND (
-              cs."search_vector" @@ to_tsquery('${searchTerm}')
-              OR cs."location" ILIKE '%${q}%'
-              OR dest."name" ILIKE '%${q}%'
-             )`
-          : ""
-      }
-      ${whereClause}
-      ${conflictClause}
-    ${facilityHaving};
+    ${whereClause}
+    ${textSearchClause}
   `;
 
-  const rows = await prisma.$queryRawUnsafe(sql);
-  const countRes = await prisma.$queryRawUnsafe(countSql);
+  // Execute
+  const results = await prisma.$queryRawUnsafe(sql, ...values);
+  const countRes = await prisma.$queryRawUnsafe(countSql, ...values);
   const total = countRes && countRes[0] ? Number(countRes[0].total) : 0;
 
-  // 7️⃣ Attach facilities & Calculate Prices
-  const campIds = rows.map((r) => r.id).filter(Boolean);
-  let results = rows;
+  // Process results
+  const campIds = results.map((r) => r.id);
+  let processedResults = results;
 
   if (campIds.length) {
-    const cf = await prisma.campSiteFacility.findMany({
+    const facilities = await prisma.campSiteFacility.findMany({
       where: { campId: { in: campIds } },
       include: { facility: true },
     });
 
-    // Also fetch experiences and destination details if needed?
-    // Let's attach just facilities for now as per original code, maybe experiences if UI needs them in card.
-
-    const facilitiesMap = {};
-    cf.forEach((item) => {
-      facilitiesMap[item.campId] = facilitiesMap[item.campId] || [];
-      facilitiesMap[item.campId].push(item.facility);
+    const fMap = {};
+    facilities.forEach((f) => {
+      if (!fMap[f.campId]) fMap[f.campId] = [];
+      fMap[f.campId].push(f.facility);
     });
 
-    results = rows.map((r) => {
-      const price = Number(r.pricePerNight);
-      let discountedPrice = price;
+    // 🆕 FETCH BOOKINGS FOR AVAILABILITY CALCULATION
+    let bookings = [];
+    if (checkIn && checkOut) {
+      bookings = await prisma.campBookings.findMany({
+        where: {
+          campSiteId: { in: campIds },
+          bookingStatus: "BOOKED",
+          checkInDate: { lt: new Date(checkOut) },
+          checkOutDate: { gt: new Date(checkIn) },
+        },
+      });
+    }
 
+    processedResults = results.map((r) => {
+      const p = Number(r.pricePerNight);
+      let dp = p;
       if (r.discountAmount) {
-        if (r.discountType === "PERCENTAGE") {
-          discountedPrice = price - (price * r.discountAmount) / 100;
-        } else if (r.discountType === "FIXED") {
-          discountedPrice = price - r.discountAmount;
+        if (r.discountType === "PERCENTAGE")
+          dp = p - (p * r.discountAmount) / 100;
+        else dp = p - r.discountAmount;
+      }
+
+      // 🆕 AVAILABILITY CALCULATION (PER DAY)
+      let isFullyBooked = false;
+      const requestedGuests = Number(adults) + Number(children);
+      const campCapacity = (r.maxAdult || 0) + (r.maxChildren || 0);
+
+      if (checkIn && checkOut) {
+        const start = new Date(checkIn);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(checkOut);
+        end.setHours(0, 0, 0, 0);
+
+        const campBookings = bookings.filter((b) => b.campSiteId === r.id);
+
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+          const currentDay = new Date(d);
+          const dailyBooked = campBookings
+            .filter((b) => {
+              const bIn = new Date(b.checkInDate);
+              bIn.setHours(0, 0, 0, 0);
+              const bOut = new Date(b.checkOutDate);
+              bOut.setHours(0, 0, 0, 0);
+              return currentDay >= bIn && currentDay < bOut;
+            })
+            .reduce((sum, b) => sum + (b.adults || 0) + (b.children || 0), 0);
+
+          if (dailyBooked + requestedGuests > campCapacity) {
+            isFullyBooked = true;
+            break;
+          }
         }
       }
 
       return {
         ...r,
-        pricePerNight: price,
-        originalPrice: price,
-        discountedPrice: Math.max(0, discountedPrice),
+        pricePerNight: p,
+        originalPrice: p,
+        discountedPrice: Math.max(0, dp),
         discountPercentage:
           r.discountType === "PERCENTAGE"
             ? r.discountAmount
             : r.discountAmount
-            ? Math.round((r.discountAmount / price) * 100)
-            : 0,
-        discountName: r.discountName,
-        facilities: facilitiesMap[r.id] || [],
-        destinationName: r.destinationName,
+              ? Math.round((r.discountAmount / p) * 100)
+              : 0,
+        facilities: fMap[r.id] || [],
+        isFullyBooked, // 🆕 Add flag
       };
     });
   }
@@ -708,7 +727,9 @@ export const searchCamp = async ({
   return {
     total,
     page: Number(page),
-    perPage: take,
-    results,
+    limit: take,
+    totalPages: Math.ceil(total / take),
+    hasMore: skip + take < total,
+    results: processedResults,
   };
 };

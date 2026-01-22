@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+const jsonParseSchema = z.preprocess((val) => {
+  if (typeof val === "string") {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
+  }
+  return val;
+}, z.any());
+
 export const createCampSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -8,10 +19,13 @@ export const createCampSchema = z.object({
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
   hostId: z.coerce.number().optional(),
-  facilities: z.array(z.any()).optional(), // Can be refined further if structure is known
-  adventureIds: z
-    .union([z.array(z.coerce.number()), z.coerce.number()])
-    .optional(),
+  facilities: jsonParseSchema.pipe(z.array(z.any()).optional()),
+  adventureIds: jsonParseSchema.pipe(
+    z.union([z.array(z.coerce.number()), z.coerce.number()]).optional(),
+  ),
+  experienceIds: jsonParseSchema.pipe(
+    z.union([z.array(z.coerce.number()), z.coerce.number()]).optional(),
+  ),
   maxAdult: z.coerce.number().optional().default(0),
   maxChildren: z.coerce.number().optional().default(0),
   maxPets: z.coerce.number().optional().default(0),
@@ -21,8 +35,9 @@ export const createCampSchema = z.object({
 });
 
 export const updateCampSchema = createCampSchema.partial().extend({
-  removedImages: z.array(z.string()).optional(),
-  newFacilities: z.array(z.any()).optional(),
+  removedImages: jsonParseSchema.pipe(z.array(z.string()).optional()),
+  newFacilities: jsonParseSchema.pipe(z.array(z.any()).optional()),
+  images: jsonParseSchema.pipe(z.array(z.string()).optional()),
 });
 
 export const searchCampSchema = z.object({

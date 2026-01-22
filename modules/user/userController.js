@@ -1,10 +1,10 @@
 import {
   createUserService,
-  getAllUserService,
   updateUserService,
   getUserByIdService,
   getCampHostUsers,
   getFeaturedHosts,
+  searchUsers,
 } from "./userService.js";
 import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 
@@ -51,10 +51,24 @@ export const updateUserController = async (req, res) => {
 };
 
 export const getAllUserController = async (req, res) => {
-  const allUsers = await getAllUserService();
-  return res
-    .status(200)
-    .json({ message: "successfully retrieved all users", data: allUsers });
+  const { q, page, limit, userType, userStatus } = req.query;
+  const result = await searchUsers({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    userType,
+    userStatus,
+  });
+
+  return res.status(200).json({
+    message: "successfully retrieved users",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
 };
 
 export const getUserByIdController = async (req, res) => {

@@ -6,11 +6,23 @@ import {
 import { processSingleFile } from "../../utils/uploads/uploadAdapter.js";
 
 export const getAllExperiencesController = async (req, res) => {
-  const includeInactive = req.query.includeInactive === "true";
-  const experiences = await experienceService.getAllExperiences(
-    includeInactive
-  );
-  res.json({ data: experiences });
+  const { q, page, limit, isActive } = req.query;
+  const result = await experienceService.searchExperiences({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    isActive,
+  });
+
+  res.json({
+    message: "Experiences fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
 };
 
 export const getExperienceByIdController = async (req, res) => {
@@ -22,7 +34,7 @@ export const getExperienceByIdController = async (req, res) => {
 export const createExperienceController = async (req, res) => {
   const imagePath = await processSingleFile(
     req.files?.imageUrl?.[0],
-    "experience"
+    "experience",
   );
 
   const slug = req.body.title
@@ -62,7 +74,7 @@ export const updateExperienceController = async (req, res) => {
   const { id } = req.params;
   const imagePath = await processSingleFile(
     req.files?.imageUrl?.[0],
-    "experience"
+    "experience",
   );
 
   const rawData = { ...req.body };

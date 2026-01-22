@@ -17,18 +17,6 @@ export const ensureFolderExists = (folderPath) => {
 };
 
 /**
- * Async version (useful if you prefer async init)
- */
-export const ensureFolderExistsAsync = async (folderPath) => {
-  const resolved = path.resolve(folderPath);
-  try {
-    await fsPromises.access(resolved);
-  } catch (err) {
-    await fsPromises.mkdir(resolved, { recursive: true });
-  }
-};
-
-/**
  * Generate a safe, unique filename using timestamp + original base name
  * Example: my_photo_1700000000000.jpg
  *
@@ -67,13 +55,4 @@ export const toPublicPath = (absolutePath) => {
   return absolutePath.startsWith(cwd)
     ? absolutePath.slice(cwd.length).replace(/\\/g, "/")
     : absolutePath.replace(/\\/g, "/");
-};
-
-
-/**
- * Helper to remove files from disk
- */
-export const removeFile = (filePath) => {
-  const absolute = path.join(process.cwd(), filePath.replace(/^\//, ""));
-  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
 };

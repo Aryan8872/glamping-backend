@@ -6,6 +6,7 @@ import {
   deleteDiscountService,
   getActiveDiscountsService,
   getFeaturedDiscountService,
+  searchDiscounts,
 } from "./discountService.js";
 
 export const createDiscountController = async (req, res) => {
@@ -16,10 +17,21 @@ export const createDiscountController = async (req, res) => {
 };
 
 export const getAllDiscountsController = async (req, res) => {
-  const discounts = await getAllDiscountsService();
-  return res
-    .status(200)
-    .json({ message: "All discounts retrieved", data: discounts });
+  const { q, page, limit, active } = req.query;
+  const result = await searchDiscounts({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    active,
+  });
+
+  return res.status(200).json({
+    message: "Discounts retrieved successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    perPage: result.perPage,
+  });
 };
 
 export const getDiscountByIdController = async (req, res) => {

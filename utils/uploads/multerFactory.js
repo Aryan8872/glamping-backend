@@ -1,11 +1,9 @@
 // src/core/upload/multerFactory.js
 import multer from "multer";
-import path from "path";
 import {
   ensureFolderExists,
   generateFileName,
   getUploadPath,
-  toPublicPath,
 } from "./storage.utils.js";
 
 const STORAGE_DRIVER = process.env.STORAGE_DRIVER || "local";

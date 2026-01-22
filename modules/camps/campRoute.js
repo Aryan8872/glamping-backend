@@ -8,6 +8,7 @@ import {
   searchCampsController,
 } from "./campController.js";
 import createMulter from "../../utils/uploads/multerFactory.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 
 import {
   createCampSchema,
@@ -24,25 +25,25 @@ const upload = createMulter("campsite", {
 campRoute.post(
   "/campsite/new",
   upload.fields([{ name: "campImages", maxCount: 10 }]),
-
-  createCampController
+  validateRequest(createCampSchema),
+  createCampController,
 );
 
 campRoute.get("/campsite/all", getAllCampsController);
 
 campRoute.get(
   "/campsite/search",
-
-  searchCampsController
+  validateRequest(searchCampSchema, "query"),
+  searchCampsController,
 );
 
 campRoute.get("/campsite/:id", getCampByIdController);
 
-campRoute.put(
+campRoute.patch(
   "/campsite/:id",
   upload.fields([{ name: "campImages", maxCount: 10 }]),
-
-  updateCampController
+  validateRequest(updateCampSchema),
+  updateCampController,
 );
 
 campRoute.delete("/campsite/:id", deleteCampController);

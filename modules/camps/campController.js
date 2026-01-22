@@ -37,8 +37,26 @@ export const createCampController = asyncHandler(async (req, res) => {
 });
 
 export const getAllCampsController = asyncHandler(async (req, res) => {
-  const camps = await campService.getAllCampSites();
-  res.json({ message: "CampSites fetched", data: camps });
+  const { q, page, limit, destination, experience, isFeatured } = req.query;
+  const result = await campService.searchCamp({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    destination,
+    experience,
+    isFeatured,
+    ignoreAvailability: true,
+  });
+
+  res.json({
+    message: "CampSites fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
 });
 
 export const getCampByIdController = asyncHandler(async (req, res) => {
@@ -65,7 +83,12 @@ export const updateCampController = asyncHandler(async (req, res) => {
 
   const payload = {
     ...body,
-    hostId: body.hostId ? Number(body.hostId) : null, // null removes host
+    hostId:
+      body.hostId !== undefined
+        ? body.hostId === ""
+          ? null
+          : Number(body.hostId)
+        : undefined,
     removedImages,
     images,
     newFacilities,
@@ -81,11 +104,16 @@ export const updateCampController = asyncHandler(async (req, res) => {
         : undefined,
     pricePerNight:
       body.pricePerNight !== undefined ? Number(body.pricePerNight) : undefined,
+    destinationId:
+      body.destinationId !== undefined
+        ? body.destinationId === ""
+          ? null
+          : Number(body.destinationId)
+        : undefined,
   };
 
   const camp = await campService.updateCampSite(Number(req.params.id), payload);
-
-  res.json({ message: "CampSite updated", data: camp });
+  res.json({ message: "CampSite updated successfully", data: camp });
 });
 
 export const deleteCampController = asyncHandler(async (req, res) => {
@@ -97,9 +125,16 @@ export const deleteCampController = asyncHandler(async (req, res) => {
 export const searchCampsController = asyncHandler(async (req, res) => {
   const src = req.validated ?? req.query;
 
-  const facilityIds = src.facilityIds
-    ? src.facilityIds.split(",").filter(Boolean)
-    : [];
+  let facilityIds = [];
+  if (src.facilityIds) {
+    if (Array.isArray(src.facilityIds)) {
+      facilityIds = src.facilityIds;
+    } else if (typeof src.facilityIds === "string") {
+      facilityIds = src.facilityIds.split(",").filter(Boolean);
+    }
+  }
+
+  console.log("🔍 facilityIds after parsing:", facilityIds);
 
   const options = {
     q: src.q,
@@ -154,6 +189,8 @@ export const searchCampsController = asyncHandler(async (req, res) => {
     data: result.results ?? [],
     total: result.total ?? 0,
     page: result.page ?? 1,
-    perPage: result.perPage ?? options.perPage,
+    limit: result.limit ?? options.perPage,
+    totalPages: result.totalPages ?? 0,
+    hasMore: result.hasMore ?? false,
   });
 });

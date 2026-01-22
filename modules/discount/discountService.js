@@ -4,6 +4,44 @@ export const createDiscountService = async (data) => {
   return await prisma.discount.create({ data });
 };
 
+export const searchDiscounts = async ({
+  q,
+  page = 1,
+  perPage = 10,
+  active,
+}) => {
+  const take = Math.max(1, Number(perPage) || 10);
+  const skip = (Math.max(1, Number(page)) - 1) * take;
+
+  const where = {};
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" } },
+      { camp: { name: { contains: q, mode: "insensitive" } } },
+      { adventure: { name: { contains: q, mode: "insensitive" } } },
+    ];
+  }
+  if (active !== undefined) {
+    where.active = active === "true" || active === true;
+  }
+
+  const [total, results] = await Promise.all([
+    prisma.discount.count({ where }),
+    prisma.discount.findMany({
+      where,
+      take,
+      skip,
+      include: {
+        camp: { select: { name: true } },
+        adventure: { select: { name: true } },
+      },
+      orderBy: { id: "desc" },
+    }),
+  ]);
+
+  return { total, results, page: Number(page), perPage: take };
+};
+
 export const getAllDiscountsService = async () => {
   return await prisma.discount.findMany({
     include: {
@@ -59,6 +97,10 @@ export const getFeaturedDiscountService = async () => {
       active: true,
       startsAt: { lte: now },
       OR: [{ endsAt: null }, { endsAt: { gte: now } }],
+    },
+    include: {
+      camp: { select: { id: true, slug: true, name: true } },
+      adventure: { select: { id: true, slug: true, name: true } },
     },
     orderBy: { startsAt: "desc" }, // Get the most recent one
   });

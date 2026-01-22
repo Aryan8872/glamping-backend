@@ -85,75 +85,9 @@ export async function deleteFiles(filePathsOrUrls) {
 }
 
 /**
- * Extract filename from URL or path for deletion
- * Handles both local paths and Supabase URLs
- * @param {string} urlOrPath - File URL or path
- * @returns {string} - Extracted filename or original input
- */
-export function extractFileName(urlOrPath) {
-  if (!urlOrPath) return "";
-
-  try {
-    // For Supabase URLs
-    if (urlOrPath.startsWith("http")) {
-      const urlPattern = /\/([^/]+)$/;
-      const match = urlOrPath.match(urlPattern);
-      return match ? match[1] : urlOrPath;
-    }
-
-    // For local paths
-    const parts = urlOrPath.split("/");
-    return parts[parts.length - 1];
-  } catch (error) {
-    console.error("❌ Failed to extract filename:", error);
-    return urlOrPath;
-  }
-}
-
-/**
- * Normalize URL for frontend compatibility
- * Ensures consistent format regardless of storage driver
- * @param {string} urlOrPath - File URL or path
- * @returns {string} - Normalized URL
- */
-export function normalizeUrl(urlOrPath) {
-  if (!urlOrPath) return "";
-
-  // Supabase URLs are already in correct format
-  if (urlOrPath.startsWith("http")) {
-    return urlOrPath;
-  }
-
-  // Local paths should start with /
-  if (!urlOrPath.startsWith("/")) {
-    return `/${urlOrPath}`;
-  }
-
-  return urlOrPath;
-}
-
-/**
  * Get current storage driver
  * @returns {string} - 'local' or 'supabase'
  */
 export function getStorageDriver() {
   return STORAGE_DRIVER;
-}
-
-/**
- * Check if a URL is from Supabase storage
- * @param {string} url - URL to check
- * @returns {boolean}
- */
-export function isSupabaseUrl(url) {
-  return url && typeof url === "string" && url.includes("supabase.co/storage");
-}
-
-/**
- * Check if a path is from local storage
- * @param {string} path - Path to check
- * @returns {boolean}
- */
-export function isLocalPath(path) {
-  return path && typeof path === "string" && path.startsWith("/uploads/");
 }

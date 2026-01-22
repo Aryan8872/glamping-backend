@@ -21,7 +21,7 @@ export const updateUserService = async (id, data) => {
     safeDelete(existingUser.profilePicture).catch((err) => {
       console.error(
         `⚠️ Failed to delete old profile picture for user ${id}:`,
-        err
+        err,
       );
     });
   }
@@ -29,9 +29,44 @@ export const updateUserService = async (id, data) => {
   const updatedUser = await prisma.user.update({ where: { id }, data });
   return updatedUser;
 };
-export const getAllUserService = async () => {
-  const users = await prisma.user.findMany();
-  return users;
+export const searchUsers = async ({
+  q,
+  page = 1,
+  perPage = 10,
+  userType,
+  userStatus,
+}) => {
+  const take = Math.max(1, Number(perPage) || 10);
+  const skip = (Math.max(1, Number(page)) - 1) * take;
+
+  const where = {};
+  if (q) {
+    where.OR = [
+      { fullName: { contains: q, mode: "insensitive" } },
+      { email: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (userType) where.userType = userType;
+  if (userStatus) where.userStatus = userStatus;
+
+  const [total, results] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      take,
+      skip,
+      orderBy: { id: "desc" },
+    }),
+  ]);
+
+  return {
+    total,
+    results,
+    page: Number(page),
+    limit: take,
+    totalPages: Math.ceil(total / take),
+    hasMore: skip + take < total,
+  };
 };
 
 export const getUserByIdService = async (id) => {

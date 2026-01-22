@@ -1,6 +1,6 @@
 import prisma from "../../utils/prismaClient.js";
 import { GalleryStatus } from "../../utils/types.js";
-import { removeFile } from "../../utils/uploads/storage.utils.js";
+
 import { safeDelete } from "../../storage/storageTransaction.js";
 
 /**
@@ -63,25 +63,74 @@ export const updateGalleryService = async (slug, updateData) => {
   const updated = await prisma.gallery.update({
     where: { slug },
     data: {
-      title: updateData.title ?? exists.title,
-      description: updateData.description ?? exists.description,
-      excerpt: updateData.excerpt ?? exists.excerpt,
+      title: updateData.title !== undefined ? updateData.title : exists.title,
+      description:
+        updateData.description !== undefined
+          ? updateData.description
+          : exists.description,
+      excerpt:
+        updateData.excerpt !== undefined ? updateData.excerpt : exists.excerpt,
       images: finalImages,
-      galleryStatus: updateData.galleryStatus ?? exists.galleryStatus,
+      galleryStatus:
+        updateData.galleryStatus !== undefined
+          ? updateData.galleryStatus
+          : exists.galleryStatus,
       coverImage: finalCoverImage,
-      metaTitle: updateData.metaTitle ?? exists.metaTitle,
-      metaDescription: updateData.metaDescription ?? exists.metaDescription,
-      metaKeywords: updateData.metaKeywords ?? exists.metaKeywords,
-      imageAlt: updateData.imageAlt ?? exists.imageAlt,
+      metaTitle:
+        updateData.metaTitle !== undefined
+          ? updateData.metaTitle
+          : exists.metaTitle,
+      metaDescription:
+        updateData.metaDescription !== undefined
+          ? updateData.metaDescription
+          : exists.metaDescription,
+      metaKeywords:
+        updateData.metaKeywords !== undefined
+          ? updateData.metaKeywords
+          : exists.metaKeywords,
+      imageAlt:
+        updateData.imageAlt !== undefined
+          ? updateData.imageAlt
+          : exists.imageAlt,
     },
   });
 
   return updated;
 };
 
-/**
- * Get all galleries
- */
+export const searchGalleries = async ({
+  q,
+  page = 1,
+  perPage = 10,
+  status,
+}) => {
+  const take = Math.max(1, Number(perPage) || 10);
+  const skip = (Math.max(1, Number(page)) - 1) * take;
+
+  const where = {
+    galleryStatus: status || { in: ["PUBLISHED", "DRAFT"] },
+  };
+
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  const [total, results] = await Promise.all([
+    prisma.gallery.count({ where }),
+    prisma.gallery.findMany({
+      where,
+      take,
+      skip,
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return { total, results, page: Number(page), perPage: take };
+};
+
 export const getGalleryService = async () => {
   return await prisma.gallery.findMany({
     where: {

@@ -21,11 +21,11 @@ userroute.get("/user/:userId", asyncHandler(getUserByIdController));
 userroute.post(
   "/user/new",
   userUploadMiddleware,
-  asyncHandler(createUserController)
+  asyncHandler(createUserController),
 );
-userroute.put(
+userroute.patch(
   "/user/:userId",
   userUploadMiddleware,
-  asyncHandler(updateUserController)
+  asyncHandler(updateUserController),
 );
 export default userroute;

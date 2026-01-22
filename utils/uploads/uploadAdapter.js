@@ -27,6 +27,7 @@ export async function processUploadedFiles(multerFiles, module) {
         const publicPath = file.path
           .replace(/\\/g, "/") // Normalize Windows paths
           .replace(/^.*\/uploads\//, "/uploads/"); // Extract public path
+        console.log(publicPath);
         return publicPath;
       });
     }
@@ -39,7 +40,7 @@ export async function processUploadedFiles(multerFiles, module) {
         originalname: file.originalname,
         module,
       }));
-
+      console.log(fileObjects);
       return await uploadFiles(fileObjects);
     }
 
@@ -64,80 +65,4 @@ export async function processSingleFile(multerFile, module) {
 
   const result = await processUploadedFiles([multerFile], module);
   return result[0] || null;
-}
-
-/**
- * Convert Multer files object to array format
- * Handles both single field and multiple fields
- *
- * @param {Object} filesObject - req.files object from Multer
- * @param {string} fieldName - Field name to extract (optional)
- * @returns {Array<Object>} - Array of Multer file objects
- *
- * @example
- * const files = extractFilesFromMulter(req.files, 'campImages');
- */
-export function extractFilesFromMulter(filesObject, fieldName = null) {
-  if (!filesObject) {
-    return [];
-  }
-
-  // If fieldName specified, return that field's files
-  if (fieldName && filesObject[fieldName]) {
-    return Array.isArray(filesObject[fieldName])
-      ? filesObject[fieldName]
-      : [filesObject[fieldName]];
-  }
-
-  // Otherwise, collect all files from all fields
-  const allFiles = [];
-  for (const key of Object.keys(filesObject)) {
-    const files = filesObject[key];
-    if (Array.isArray(files)) {
-      allFiles.push(...files);
-    } else if (files) {
-      allFiles.push(files);
-    }
-  }
-
-  return allFiles;
-}
-
-/**
- * Helper to process multiple file fields at once
- *
- * @param {Object} filesObject - req.files from Multer
- * @param {Object} fieldConfig - Configuration object mapping field names to modules
- * @returns {Promise<Object>} - Object with processed file URLs for each field
- *
- * @example
- * const result = await processMultipleFields(req.files, {
- *   coverImage: 'gallery',
- *   galleryImages: 'gallery'
- * });
- * // Returns: { coverImage: 'url', galleryImages: ['url1', 'url2'] }
- */
-export async function processMultipleFields(filesObject, fieldConfig) {
-  if (!filesObject || !fieldConfig) {
-    return {};
-  }
-
-  const result = {};
-
-  for (const [fieldName, module] of Object.entries(fieldConfig)) {
-    const files = filesObject[fieldName];
-
-    if (!files) {
-      result[fieldName] = null;
-      continue;
-    }
-
-    if (Array.isArray(files)) {
-      result[fieldName] = await processUploadedFiles(files, module);
-    } else {
-      result[fieldName] = await processSingleFile(files, module);
-    }
-  }
-
-  return result;
 }

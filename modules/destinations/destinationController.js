@@ -12,11 +12,24 @@ const destinationSchema = z.object({
 });
 
 export const getAllDestinationsController = async (req, res) => {
-  const includeInactive = req.query.includeInactive === "true";
-  const destinations = await destinationService.getAllDestinations(
-    includeInactive
-  );
-  res.json({ data: destinations });
+  const { q, page, limit, isActive, isFeatured } = req.query;
+  const result = await destinationService.searchDestinations({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    isActive,
+    isFeatured,
+  });
+
+  res.json({
+    message: "Destinations fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
 };
 
 export const getDestinationByIdController = async (req, res) => {
@@ -29,7 +42,7 @@ export const createDestinationController = async (req, res) => {
   // Frontend sends "imageUrl"
   const imagePath = await processSingleFile(
     req.files?.imageUrl?.[0],
-    "destination"
+    "destination",
   );
 
   const slug = req.body.name
@@ -64,7 +77,7 @@ export const updateDestinationController = async (req, res) => {
   const { id } = req.params;
   const imagePath = await processSingleFile(
     req.files?.imageUrl?.[0],
-    "destination"
+    "destination",
   );
 
   const rawData = { ...req.body };

@@ -5,6 +5,7 @@ import {
   cancelBookingController,
   getBookingController,
   getAllBookingController,
+  getCampAvailabilityController,
 } from "./bookingController.js";
 
 import {
@@ -17,17 +18,21 @@ const bookingRoute = Router();
 bookingRoute.post(
   "/booking/new",
 
-  createBookingController
+  createBookingController,
 );
 bookingRoute.get("/booking/all", getAllBookingController);
 
 bookingRoute.put(
   "/booking/:id",
 
-  updateBookingController
+  updateBookingController,
 );
 
 bookingRoute.patch("/booking/:id/cancel", cancelBookingController);
+bookingRoute.get(
+  "/booking/availability/:campId",
+  getCampAvailabilityController,
+);
 bookingRoute.get("/booking/:id", getBookingController);
 
 export default bookingRoute;

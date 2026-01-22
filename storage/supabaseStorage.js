@@ -102,6 +102,7 @@ export async function uploadMultipleToSupabase(files) {
     const uploadPromises = files.map((file) => uploadToSupabase(file));
     const results = await Promise.all(uploadPromises);
     console.log(`✅ Uploaded ${results.length} files to Supabase`);
+    console.log(results)
     return results;
   } catch (error) {
     console.error("❌ Multiple Supabase uploads failed:", error);

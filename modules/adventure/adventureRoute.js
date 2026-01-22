@@ -3,47 +3,51 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import * as adventureController from "./adventureController.js";
 import { adventureUploadMiddleware } from "../../utils/uploads/multer.adventure.js";
 import { multerErrorHandler } from "../../utils/uploads/multerErrors.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 
 import {
   createAdventureSchema,
   updateAdventureSchema,
+  searchAdventureSchema,
 } from "./adventureValidation.js";
+
 const adventureRoute = express.Router();
+
 adventureRoute.get(
   "/adventure/all",
-
-  asyncHandler(adventureController.getAllAdventuresController)
+  validateRequest(searchAdventureSchema, "query"),
+  asyncHandler(adventureController.getAllAdventuresController),
 );
 adventureRoute.get(
   "/adventure/:id",
-  asyncHandler(adventureController.getAdventureByIdController)
+  asyncHandler(adventureController.getAdventureByIdController),
 );
 adventureRoute.get(
   "/adventure/slug/:slug",
-  asyncHandler(adventureController.getAdventureBySlugController)
+  asyncHandler(adventureController.getAdventureBySlugController),
 );
 
 adventureRoute.post(
   "/adventure/new",
   adventureUploadMiddleware,
   multerErrorHandler,
-
-  asyncHandler(adventureController.createAdventureController)
+  validateRequest(createAdventureSchema),
+  asyncHandler(adventureController.createAdventureController),
 );
 adventureRoute.put(
   "/adventure/update/:id",
   adventureUploadMiddleware,
   multerErrorHandler,
-
-  asyncHandler(adventureController.updateAdventureController)
+  validateRequest(updateAdventureSchema),
+  asyncHandler(adventureController.updateAdventureController),
 );
 
 adventureRoute.delete(
   "/adventure/delete/:id",
-  asyncHandler(adventureController.deleteAdventureController)
+  asyncHandler(adventureController.deleteAdventureController),
 );
 adventureRoute.post(
   "/adventure/assign/:campId",
-  asyncHandler(adventureController.assignAdventuresToCampController)
+  asyncHandler(adventureController.assignAdventuresToCampController),
 );
 export default adventureRoute;

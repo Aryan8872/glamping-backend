@@ -4,18 +4,19 @@ import {
   processUploadedFiles,
   processSingleFile,
 } from "../../utils/uploads/uploadAdapter.js";
+import { safeParseArray } from "../../utils/safeParseArray.js";
 
 export const createGalleryController = asyncHandler(async (req, res) => {
   const body = req.validated || req.body || {};
 
   const coverImage = await processSingleFile(
     req.files?.coverImage?.[0],
-    "gallery"
+    "gallery",
   );
 
   const galleryImages = await processUploadedFiles(
     req.files?.galleryImage,
-    "gallery"
+    "gallery",
   );
 
   const payload = {
@@ -37,18 +38,16 @@ export const updateGalleryController = asyncHandler(async (req, res) => {
   console.log("files", req.files);
   console.log("Content-Type:", req.headers["content-type"]);
   // Parse arrays sent from frontend
-  const removedImages = body.removedImages
-    ? JSON.parse(body.removedImages)
-    : [];
-  const existingImages = body.images ? JSON.parse(body.images) : [];
+  const removedImages = safeParseArray(body.removedImages);
+  const existingImages = safeParseArray(body.images);
 
   const newImages = await processUploadedFiles(
     req.files?.galleryImage,
-    "gallery"
+    "gallery",
   );
   const coverImage = await processSingleFile(
     req.files?.coverImage?.[0],
-    "gallery"
+    "gallery",
   );
 
   const updatePayload = {
@@ -61,14 +60,27 @@ export const updateGalleryController = asyncHandler(async (req, res) => {
 
   const updated = await galleryService.updateGalleryService(
     slug,
-    updatePayload
+    updatePayload,
   );
   return res.status(200).json({ message: "Gallery updated", data: updated });
 });
 
 export const getGalleryController = asyncHandler(async (req, res) => {
-  const galleries = await galleryService.getGalleryService();
-  return res.status(200).json({ message: "Gallery data", data: galleries });
+  const { q, page, limit, status } = req.query;
+  const result = await galleryService.searchGalleries({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    status,
+  });
+
+  return res.status(200).json({
+    message: "Galleries fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    perPage: result.perPage,
+  });
 });
 
 export const deleteGalleryController = asyncHandler(async (req, res) => {

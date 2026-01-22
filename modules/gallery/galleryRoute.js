@@ -13,6 +13,7 @@ import {
   updateGallerySchema,
 } from "./galleryValidation.js";
 import createMulter from "../../utils/uploads/multerFactory.js";
+import { validateRequest } from "../../middleware/validateRequest.js";
 
 const galleryRoute = Router();
 const upload = createMulter("gallery", {
@@ -26,8 +27,8 @@ galleryRoute.post(
     { name: "coverImage", maxCount: 1 },
     { name: "galleryImage", maxCount: 10 },
   ]),
-
-  createGalleryController
+  validateRequest(createGallerySchema),
+  createGalleryController,
 );
 
 galleryRoute.get("/gallery/all", getGalleryController);
@@ -39,8 +40,8 @@ galleryRoute.put(
     { name: "coverImage", maxCount: 1 },
     { name: "galleryImage", maxCount: 10 },
   ]),
-
-  updateGalleryController
+  validateRequest(updateGallerySchema),
+  updateGalleryController,
 );
 
 galleryRoute.patch("/gallery/:slug/:status", updateGalleryStatusController);

@@ -37,10 +37,44 @@ export const getBookingController = asyncHandler(async (req, res) => {
 });
 
 export const getAllBookingController = asyncHandler(async (req, res) => {
-  const booking = await prisma.campBookings.findMany({
-    include: {
-      campSite: { include: { campHost: true } },
-    },
+  const { q, page, limit, status, checkIn, checkOut } = req.query;
+  const result = await bookingService.searchBookings({
+    q,
+    page: Number(page) || 1,
+    perPage: Number(limit) || 15,
+    status,
+    checkIn,
+    checkOut,
   });
-  return res.json({ message: "OK", data: booking });
+
+  return res.json({
+    message: "Bookings fetched successfully",
+    data: result.results,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    hasMore: result.hasMore,
+  });
+});
+export const getCampAvailabilityController = asyncHandler(async (req, res) => {
+  const campId = Number(req.params.campId);
+  const { checkIn, checkOut } = req.query;
+
+  if (!checkIn || !checkOut) {
+    return res
+      .status(400)
+      .json({ message: "checkIn and checkOut are required" });
+  }
+
+  const availability = await bookingService.getCampAvailability(
+    campId,
+    new Date(checkIn),
+    new Date(checkOut),
+  );
+
+  return res.json({
+    message: "Availability fetched",
+    data: availability,
+  });
 });
