@@ -290,10 +290,13 @@ model CoreValue {
 }
 
 model Contact {
-  id          Int    @id @default(1)
-  email       String
-  phoneNumber String
-  address     String
+  id           Int     @id @default(1)
+  email        String
+  phoneNumber  String
+  address      String
+  facebookUrl  String?
+  instagramUrl String?
+  twitterUrl   String?
 }
 
 // New Models

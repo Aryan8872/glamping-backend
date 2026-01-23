@@ -12,6 +12,9 @@ export const getContact = async () => {
         email: "info@example.com",
         phoneNumber: "+1234567890",
         address: "123 Main St, City, Country",
+        facebookUrl: "https://facebook.com",
+        instagramUrl: "https://instagram.com",
+        twitterUrl: "https://twitter.com",
       },
     });
   }
