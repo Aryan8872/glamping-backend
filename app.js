@@ -23,6 +23,9 @@ dotenv.config();
 const app = express();
 const port = 8080;
 
+// Trust proxy for Render/Vercel (required for express-rate-limit and secure cookies)
+app.set("trust proxy", 1);
+
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use(express.urlencoded({ extended: true }));

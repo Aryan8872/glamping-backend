@@ -1,9 +1,11 @@
 import crypto from "crypto";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  secure: true, // Must be true for sameSite: 'none'
+  sameSite: "none", // Required for cross-site requests (Vercel -> Render)
   path: "/",
 };
 
