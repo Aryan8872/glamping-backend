@@ -57,12 +57,36 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const redisUrl =
+          configService.get<string>('REDIS_PRIVATE_URL') ||
+          configService.get<string>('REDIS_URL');
+
+        if (redisUrl) {
+          try {
+            const parsed = new URL(redisUrl);
+            return {
+              connection: {
+                host: parsed.hostname,
+                port: Number(parsed.port) || 6379,
+                username: parsed.username || undefined,
+                password: parsed.password || undefined,
+                tls: parsed.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+              },
+            };
+          } catch {
+            // fallback if URL parsing fails
+          }
+        }
+
+        return {
+          connection: {
+            host: configService.get<string>('REDIS_HOST', 'localhost'),
+            port: configService.get<number>('REDIS_PORT', 6379),
+            password: configService.get<string>('REDIS_PASSWORD') || undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     AuthModule,
