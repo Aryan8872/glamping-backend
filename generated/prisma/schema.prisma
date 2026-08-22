@@ -6,6 +6,7 @@
 
 generator client {
   provider   = "prisma-client-js"
+  output     = "../generated/prisma"
   engineType = "binary"
 }
 
@@ -63,8 +64,6 @@ model User {
   campBookings   CampBookings[]
   profilePicture String?
   campSite       CampSite[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
 
   // Auth Relations
   sessions      Session[]
@@ -115,7 +114,7 @@ model Blog {
   metaDescription String
   metaKeywords    String
   indexable       Boolean    @default(true)
-  coverImage      String?
+  coverImage      String
   tags            String[]
   views           Int        @default(0)
 }
@@ -148,18 +147,17 @@ model CampSite {
   maxAdult      Int                     @default(0)
   maxChildren   Int                     @default(0)
   maxPets       Int                     @default(0)
-  search_vector Unsupported("tsvector")?
+  search_vector Unsupported("tsvector") @default(dbgenerated())
   isFeatured    Boolean                 @default(false)
 }
 
 model Facility {
-  id          Int      @id @default(autoincrement())
-  name        String
-  icon        String
-  description String?
-  slug        String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  icon      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   campSites CampSiteFacility[]
 }
@@ -192,8 +190,6 @@ model CampBookings {
   campSiteId           Int
   bookingStatus        BookingStatus        @default(BOOKED)
   campSite             CampSite             @relation(fields: [campSiteId], references: [id])
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
 }
 
 model Adventure {
@@ -305,16 +301,13 @@ model Contact {
 // New Models
 
 model Destination {
-  id              Int     @id @default(autoincrement())
-  name            String  @unique
-  slug            String  @unique
-  title           String?
-  pageDescription String?
-  description     String?
-  imageUrl        String?
-  bannerUrl       String?
-  isFeatured      Boolean @default(false) // For "Top Destinations"
-  isActive        Boolean @default(true)
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  imageUrl    String?
+  isFeatured  Boolean @default(false) // For "Top Destinations"
+  isActive    Boolean @default(true)
 
   campSites CampSite[]
 
@@ -323,16 +316,12 @@ model Destination {
 }
 
 model Experience {
-  id              Int     @id @default(autoincrement())
-  name            String?
-  title           String  @unique
-  slug            String  @unique
-  imageUrl        String?
-  bannerUrl       String?
-  description     String?
-  pageDescription String?
-  isActive        Boolean @default(true)
-  isFeatured      Boolean @default(false)
+  id          Int     @id @default(autoincrement())
+  title       String  @unique
+  slug        String  @unique
+  imageUrl    String?
+  description String?
+  isActive    Boolean @default(true)
 
   campSites CampSiteExperience[]
 
