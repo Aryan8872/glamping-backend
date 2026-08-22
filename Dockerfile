@@ -3,13 +3,13 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install all dependencies (including dev tools & transitive build packages)
 COPY package*.json prisma.config.ts ./
 COPY prisma ./prisma/
 
 RUN npm ci
 
-# Copy source code and build using precompiled SWC/Nest
+# Copy source code and compile
 COPY . .
 
 RUN npx prisma generate
@@ -23,12 +23,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
+# Copy all verified dependencies and compiled outputs directly from builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 8080
