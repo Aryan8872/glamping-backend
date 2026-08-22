@@ -53,6 +53,8 @@
     "zod": "^4.4.3",
     "@nestjs/cli": "^11.0.0",
     "@prisma/adapter-pg": "^7.9.1",
+    "@swc/cli": "^0.6.0",
+    "@swc/core": "^1.11.0",
     "pg": "^8.23.0",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3"
